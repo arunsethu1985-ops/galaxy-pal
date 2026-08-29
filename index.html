@@ -1,1 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>GALAXY PALS</title>
+  <link rel="stylesheet" href="game.css" />
+</head>
+<body>
+  <main id="gameShell" class="game-shell">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="loading" class="loading">
+      <div class="loading-card">
+        <div class="logo-mark">✦</div>
+        <h1>GALAXY PALS</h1>
+        <p>Loading 3D world…</p>
+      </div>
+    </div>
+
+    <header class="top-hud">
+      <div id="zoneName" class="hud-pill">VERDANT WILDS</div>
+      <div id="clockText" class="hud-pill">DAY 1 • 08:00</div>
+      <div id="levelText" class="hud-pill">LV 1</div>
+    </header>
+
+    <div class="crosshair" aria-hidden="true"><span></span><span></span></div>
+
+    <section id="targetCard" class="target-card" hidden>
+      <div class="target-row">
+        <div>
+          <strong id="targetName">Wild Pal</strong>
+          <span id="targetMeta">LV 1 • Neutral</span>
+        </div>
+        <strong id="captureChance">25%</strong>
+      </div>
+      <div class="meter red"><i id="targetHpBar"></i></div>
+    </section>
+
+    <section class="player-bars">
+      <div class="bar-row"><span>HP</span><div class="meter"><i id="hpBar"></i></div><strong id="hpText">100</strong></div>
+      <div class="bar-row"><span>STAMINA</span><div class="meter stamina"><i id="staminaBar"></i></div><strong id="staminaText">100</strong></div>
+      <div class="bar-row"><span>FOOD</span><div class="meter food"><i id="foodBar"></i></div><strong id="foodText">100</strong></div>
+    </section>
+
+    <aside id="partyHud" class="party-hud"></aside>
+    <aside id="feed" class="feed"></aside>
+    <aside id="orbHud" class="orb-hud"></aside>
+
+    <div class="controls">
+      Click game • WASD move • Shift sprint • Mouse camera • Left click attack • Hold Q aim • Release Q throw Orb • F summon • E mount • 1–5 Orb
+    </div>
+
+    <button id="menuButton" class="menu-button" type="button">☰</button>
+
+    <section id="menuPanel" class="menu-panel" hidden>
+      <h2>GALAXY PALS</h2>
+      <button id="resumeButton" type="button">Resume</button>
+      <button id="resetButton" type="button">Reset Save</button>
+      <a href="/" class="menu-link">Back to GALAXY</a>
+    </section>
+  </main>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
 
