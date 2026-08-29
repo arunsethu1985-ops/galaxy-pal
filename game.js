@@ -1,249 +1,563 @@
 import * as THREE from "https://esm.sh/three@0.160.0";
-import { GLTFLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
-import { clone as cloneSkinned } from "https://esm.sh/three@0.160.0/examples/jsm/utils/SkeletonUtils.js";
 
-const $ = (s, r = document) => r.querySelector(s);
-const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-const rand = (a, b) => a + Math.random() * (b - a);
-const pick = a => a[Math.floor(Math.random() * a.length)];
+import {
+  GLTFLoader
+} from "https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
 
-const SAVE_KEY = "galaxy-pals-save-v1";
+import {
+  FBXLoader
+} from "https://esm.sh/three@0.160.0/examples/jsm/loaders/FBXLoader.js";
 
-const PALS = [
+import {
+  OBJLoader
+} from "https://esm.sh/three@0.160.0/examples/jsm/loaders/OBJLoader.js";
+
+import {
+  MTLLoader
+} from "https://esm.sh/three@0.160.0/examples/jsm/loaders/MTLLoader.js";
+
+import {
+  STLLoader
+} from "https://esm.sh/three@0.160.0/examples/jsm/loaders/STLLoader.js";
+
+import {
+  clone as cloneSkinned
+} from "https://esm.sh/three@0.160.0/examples/jsm/utils/SkeletonUtils.js";
+
+
+const $ = (s, r = document) =>
+  r.querySelector(s);
+
+const clamp = (n, a, b) =>
+  Math.max(a, Math.min(b, n));
+
+const rand = (a, b) =>
+  a + Math.random() * (b - a);
+
+const pick = a =>
+  a[Math.floor(Math.random() * a.length)];
+
+
+const SAVE_KEY =
+  "galaxy-pals-mixed-models-v1";
+
+
+/* =========================================================
+   PAL FILES
+
+   The game automatically tries different formats.
+
+   Example:
+   anubis.glb
+   OR
+   anubis.fbx
+
+   You do NOT need both.
+========================================================= */
+
+const PAL_LIBRARY = [
+
   {
-    id: "emberfox",
-    name: "Emberfox",
-    element: "Fire",
-    model: "assets/pals/emberfox.glb",
-    scale: 1.05,
-    hp: 110,
-    speed: 4.2,
-    rarity: 1,
-    mount: "ground"
-  },
-  {
-    id: "frostwolf",
-    name: "Frostwolf",
-    element: "Ice",
-    model: "assets/pals/frostwolf.glb",
-    scale: 1.18,
-    hp: 150,
-    speed: 4.8,
-    rarity: 2,
-    mount: "ground"
-  },
-  {
-    id: "voltlynx",
-    name: "Voltlynx",
-    element: "Electric",
-    model: "assets/pals/voltlynx.glb",
-    scale: 1,
-    hp: 125,
-    speed: 5.1,
-    rarity: 2,
-    mount: "ground"
-  },
-  {
-    id: "aquafin",
-    name: "Aquafin",
-    element: "Water",
-    model: "assets/pals/aquafin.glb",
-    scale: 1.25,
-    hp: 165,
-    speed: 3.7,
-    rarity: 2,
-    mount: "swim"
-  },
-  {
-    id: "stonehorn",
-    name: "Stonehorn",
+    id: "anubis",
+    name: "Anubis",
     element: "Ground",
-    model: "assets/pals/stonehorn.glb",
-    scale: 1.4,
+
+    files: [
+      "assets/pals/anubis.glb",
+      "assets/pals/anubis.fbx"
+    ],
+
+    height: 2.4,
     hp: 230,
+    speed: 4.5,
+    rarity: 4,
+    mount: "ground"
+  },
+
+  {
+    id: "astegon",
+    name: "Astegon",
+    element: "Dragon",
+
+    files: [
+      "assets/pals/astegon.glb",
+      "assets/pals/astegon.obj"
+    ],
+
+    height: 3.2,
+    hp: 320,
+    speed: 3.5,
+    rarity: 5,
+    mount: "flying"
+  },
+
+  {
+    id: "chikipi",
+    name: "Chikipi",
+    element: "Neutral",
+
+    files: [
+      "assets/pals/chikipi.glb"
+    ],
+
+    height: 1.05,
+    hp: 80,
     speed: 3,
+    rarity: 1
+  },
+
+  {
+    id: "chillet",
+    name: "Chillet",
+    element: "Ice",
+
+    files: [
+      "assets/pals/chillet.glb",
+      "assets/pals/chillet.fbx"
+    ],
+
+    height: 2.2,
+    hp: 170,
+    speed: 4.6,
     rarity: 3,
     mount: "ground"
   },
+
   {
-    id: "stormgryph",
-    name: "Stormgryph",
-    element: "Electric",
-    model: "assets/pals/stormgryph.glb",
-    scale: 1.35,
-    hp: 185,
-    speed: 5.6,
-    rarity: 4,
-    mount: "flying"
+    id: "direhowl",
+    name: "Direhowl",
+    element: "Neutral",
+
+    files: [
+      "assets/pals/direhowl.glb",
+      "assets/pals/direhowl.fbx",
+      "assets/pals/dire wolf.fbx"
+    ],
+
+    height: 1.55,
+    hp: 145,
+    speed: 5.4,
+    rarity: 2,
+    mount: "ground"
   },
+
   {
-    id: "cinderdrake",
-    name: "Cinderdrake",
-    element: "Fire",
-    model: "assets/pals/cinderdrake.glb",
-    scale: 1.55,
-    hp: 260,
-    speed: 5,
-    rarity: 4,
-    mount: "flying"
+    id: "dupin",
+    name: "Dupin",
+    element: "Neutral",
+
+    files: [
+      "assets/pals/dupin.glb"
+    ],
+
+    height: 1.7,
+    hp: 135,
+    speed: 4,
+    rarity: 2
   },
+
   {
-    id: "glacierox",
-    name: "Glacierox",
-    element: "Ice",
-    model: "assets/pals/glacierox.glb",
-    scale: 1.5,
-    hp: 300,
-    speed: 3,
+    id: "fenglope",
+    name: "Fenglope",
+    element: "Neutral",
+
+    files: [
+      "assets/pals/fenglope.glb",
+      "assets/pals/fenglope.fbx"
+    ],
+
+    height: 2,
+    hp: 180,
+    speed: 5.8,
     rarity: 4,
     mount: "ground"
   },
+
   {
-    id: "voidlion",
-    name: "Voidlion",
-    element: "Dark",
-    model: "assets/pals/voidlion.glb",
-    scale: 1.3,
-    hp: 240,
-    speed: 5.3,
+    id: "foxparks",
+    name: "Foxparks",
+    element: "Fire",
+
+    files: [
+      "assets/pals/foxparks.glb",
+      "assets/pals/foxparks.fbx"
+    ],
+
+    height: 1.25,
+    hp: 110,
+    speed: 4.4,
+    rarity: 2
+  },
+
+  {
+    id: "grizzbolt",
+    name: "Grizzbolt",
+    element: "Electric",
+
+    files: [
+      "assets/pals/grizzbolt.glb",
+      "assets/pals/grizzbolt.fbx"
+    ],
+
+    height: 2.8,
+    hp: 310,
+    speed: 3.7,
     rarity: 5,
     mount: "ground"
   },
+
   {
-    id: "bloomdeer",
-    name: "Bloomdeer",
-    element: "Grass",
-    model: "assets/pals/bloomdeer.glb",
-    scale: 1.1,
-    hp: 140,
-    speed: 4.5,
-    rarity: 2,
-    mount: "ground"
-  },
-  {
-    id: "moonowl",
-    name: "Moonowl",
-    element: "Dark",
-    model: "assets/pals/moonowl.glb",
-    scale: 1.1,
-    hp: 130,
-    speed: 5,
-    rarity: 3,
-    mount: "flying"
-  },
-  {
-    id: "starwyrm",
-    name: "Starwyrm",
+    id: "jetragon",
+    name: "Jetragon",
     element: "Dragon",
-    model: "assets/pals/starwyrm.glb",
-    scale: 2.1,
-    hp: 680,
-    speed: 4.5,
+
+    files: [
+      "assets/pals/jetragon.glb",
+      "assets/pals/jetragon.fbx",
+      "assets/pals/jetragon.stl",
+      "assets/pals/jet dragon.stl"
+    ],
+
+    height: 3.2,
+    hp: 650,
+    speed: 6.4,
     rarity: 5,
     mount: "flying",
     boss: true
+  },
+
+  {
+    id: "katress",
+    name: "Katress",
+    element: "Dark",
+
+    files: [
+      "assets/pals/katress.glb",
+      "assets/pals/katress.fbx"
+    ],
+
+    height: 1.8,
+    hp: 165,
+    speed: 4.2,
+    rarity: 3
+  },
+
+  {
+    id: "kitsun",
+    name: "Kitsun",
+    element: "Fire",
+
+    files: [
+      "assets/pals/kitsun.glb",
+      "assets/pals/kitsun.fbx",
+      "assets/pals/kitsun.stl"
+    ],
+
+    height: 1.45,
+    hp: 155,
+    speed: 5.1,
+    rarity: 4,
+    mount: "ground"
+  },
+
+  {
+    id: "leezpunk",
+    name: "Leezpunk",
+    element: "Dark",
+
+    files: [
+      "assets/pals/leezpunk.glb",
+      "assets/pals/leezpunk.fbx"
+    ],
+
+    height: 1.65,
+    hp: 145,
+    speed: 4.1,
+    rarity: 2
+  },
+
+  {
+    id: "lily-everhart",
+    name: "Lily Everhart",
+    element: "Neutral",
+
+    files: [
+      "assets/pals/lily-everhart.glb",
+      "assets/pals/lily-everhart.fbx",
+      "assets/pals/lily ever heart.fbx"
+    ],
+
+    height: 1.75,
+    hp: 170,
+    speed: 4.2,
+    rarity: 4
+  },
+
+  {
+    id: "lovander",
+    name: "Lovander",
+    element: "Neutral",
+
+    files: [
+      "assets/pals/lovander.glb",
+      "assets/pals/lovander.fbx"
+    ],
+
+    height: 1.9,
+    hp: 160,
+    speed: 4,
+    rarity: 3
+  },
+
+  {
+    id: "lunaris",
+    name: "Lunaris",
+    element: "Neutral",
+
+    files: [
+      "assets/pals/lunaris.glb",
+      "assets/pals/lunaris.fbx"
+    ],
+
+    height: 1.45,
+    hp: 155,
+    speed: 4.3,
+    rarity: 3
+  },
+
+  {
+    id: "mammorest",
+    name: "Mammorest",
+    element: "Grass",
+
+    files: [
+      "assets/pals/mammorest.glb"
+    ],
+
+    height: 3.7,
+    hp: 420,
+    speed: 2.9,
+    rarity: 5,
+    mount: "ground",
+    boss: true
+  },
+
+  {
+    id: "mau",
+    name: "Mau",
+    element: "Dark",
+
+    files: [
+      "assets/pals/mau.glb",
+      "assets/pals/mau.obj"
+    ],
+
+    height: 1.15,
+    hp: 100,
+    speed: 4.5,
+    rarity: 2
+  },
+
+  {
+    id: "mossanda",
+    name: "Mossanda",
+    element: "Grass",
+
+    files: [
+      "assets/pals/mossanda.glb",
+      "assets/pals/mossanda.fbx"
+    ],
+
+    height: 2.6,
+    hp: 280,
+    speed: 3.3,
+    rarity: 4,
+    mount: "ground"
   }
+
 ];
 
-const ORBS = [
-  { name: "Basic Orb", bonus: 1, color: 0x52a9ff },
-  { name: "Mega Orb", bonus: 1.35, color: 0x59db7a },
-  { name: "Giga Orb", bonus: 1.75, color: 0xe2c84d },
-  { name: "Hyper Orb", bonus: 2.2, color: 0xa76fe8 },
-  { name: "Ultra Orb", bonus: 2.8, color: 0xffb44e }
+
+/* =========================================================
+   CAPTURE SPHERES
+========================================================= */
+
+const SPHERES = [
+
+  {
+    name: "Basic Sphere",
+    bonus: 1,
+    color: 0x4da7ff
+  },
+
+  {
+    name: "Mega Sphere",
+    bonus: 1.35,
+    color: 0x54d878
+  },
+
+  {
+    name: "Giga Sphere",
+    bonus: 1.75,
+    color: 0xe0c74c
+  },
+
+  {
+    name: "Hyper Sphere",
+    bonus: 2.2,
+    color: 0x9e6bea,
+    model: "assets/items/hyper-sphere.glb"
+  },
+
+  {
+    name: "Ultra Sphere",
+    bonus: 2.8,
+    color: 0xff9f43
+  }
+
 ];
+
 
 const DEFAULT_SAVE = {
+
   level: 1,
   xp: 0,
+
   hp: 100,
   stamina: 100,
   hunger: 100,
+
   x: 0,
   y: 0,
   z: 8,
-  selectedOrb: 0,
-  orbs: [20, 8, 4, 2, 1],
+
+  selectedSphere: 0,
+
+  spheres: [
+    25,
+    10,
+    5,
+    2,
+    1
+  ],
+
   party: [],
   box: []
+
 };
+
 
 function loadSave() {
+
   try {
+
     return {
+
       ...DEFAULT_SAVE,
-      ...(JSON.parse(localStorage.getItem(SAVE_KEY)) || {})
+
+      ...(
+        JSON.parse(
+          localStorage.getItem(
+            SAVE_KEY
+          )
+        ) || {}
+      )
+
     };
+
   } catch {
-    return { ...DEFAULT_SAVE };
+
+    return {
+      ...DEFAULT_SAVE
+    };
+
   }
+
 }
 
-const canvas = $("#gameCanvas");
-const host = $("#gameShell");
-const loading = $("#loading");
-
-const loader = new GLTFLoader();
 
 const state = {
+
   save: loadSave(),
+
   keys: new Set(),
+
   creatures: [],
+
   mixers: [],
-  modelCache: new Map(),
+
+  cache: new Map(),
+
   target: null,
+
   companion: null,
+
   mounted: false,
+
   projectiles: [],
-  heldOrb: null,
+
+  heldSphere: null,
+
   charging: false,
+
   chargeStart: 0,
+
   feed: [],
+
   worldTime: 8,
-  lastSave: performance.now(),
+
+  lastSave:
+    performance.now(),
+
   player: null,
-  running: true
+
+  sphereModel: null
+
 };
 
-function saveGame() {
-  if (!state.player) return;
 
-  state.save.x = state.player.x;
-  state.save.y = state.player.y;
-  state.save.z = state.player.z;
-  state.save.hp = state.player.hp;
-  state.save.stamina = state.player.stamina;
-  state.save.hunger = state.player.hunger;
+const canvas =
+  $("#gameCanvas");
 
-  localStorage.setItem(
-    SAVE_KEY,
-    JSON.stringify(state.save)
+const host =
+  $("#gameShell");
+
+const loading =
+  $("#loading");
+
+
+if (
+  !canvas ||
+  !host
+) {
+
+  throw new Error(
+    "GALAXY PALS: index.html is missing the game canvas."
   );
+
 }
 
-function msg(text) {
-  state.feed.unshift({
-    text,
-    time: performance.now()
-  });
 
-  state.feed = state.feed.slice(0, 5);
-}
+/* =========================================================
+   THREE.JS WORLD
+========================================================= */
 
-/* ===============================
-   THREE SCENE
-================================ */
+const scene =
+  new THREE.Scene();
 
-const scene = new THREE.Scene();
 
 scene.background =
-  new THREE.Color(0x93cce9);
+  new THREE.Color(
+    0x91cbea
+  );
+
 
 scene.fog =
   new THREE.FogExp2(
-    0xa7d3df,
-    0.0055
+    0xa5d0df,
+    0.0054
   );
+
 
 const camera =
   new THREE.PerspectiveCamera(
@@ -253,40 +567,56 @@ const camera =
     500
   );
 
+
 const renderer =
   new THREE.WebGLRenderer({
+
     canvas,
     antialias: true
+
   });
 
-renderer.shadowMap.enabled = true;
+
+renderer.shadowMap.enabled =
+  true;
+
 
 renderer.shadowMap.type =
   THREE.PCFSoftShadowMap;
 
+
 renderer.outputColorSpace =
   THREE.SRGBColorSpace;
+
 
 renderer.toneMapping =
   THREE.ACESFilmicToneMapping;
 
+
 renderer.toneMappingExposure =
   1.05;
 
+
+/* LIGHT */
+
 const hemi =
   new THREE.HemisphereLight(
-    0xeaf8ff,
+    0xeaf7ff,
     0x405537,
-    1.55
+    1.5
   );
 
-scene.add(hemi);
+scene.add(
+  hemi
+);
+
 
 const sun =
   new THREE.DirectionalLight(
-    0xffefd1,
+    0xffefd2,
     2.2
   );
+
 
 sun.position.set(
   45,
@@ -294,326 +624,1119 @@ sun.position.set(
   30
 );
 
-sun.castShadow = true;
+
+sun.castShadow =
+  true;
+
 
 sun.shadow.mapSize.set(
   2048,
   2048
 );
 
-sun.shadow.camera.left = -100;
-sun.shadow.camera.right = 100;
-sun.shadow.camera.top = 100;
-sun.shadow.camera.bottom = -100;
 
-scene.add(sun);
+sun.shadow.camera.left =
+  -120;
+
+sun.shadow.camera.right =
+  120;
+
+sun.shadow.camera.top =
+  120;
+
+sun.shadow.camera.bottom =
+  -120;
+
+
+scene.add(
+  sun
+);
+
 
 const world =
   new THREE.Group();
 
-scene.add(world);
-
-/* ===============================
-   WORLD
-================================ */
-
-const ground =
-  new THREE.Mesh(
-    new THREE.PlaneGeometry(
-      360,
-      360
-    ),
-    new THREE.MeshStandardMaterial({
-      color: 0x59854b,
-      roughness: 0.96
-    })
-  );
-
-ground.rotation.x =
-  -Math.PI / 2;
-
-ground.receiveShadow = true;
-
-world.add(ground);
-
-const water =
-  new THREE.Mesh(
-    new THREE.CircleGeometry(
-      27,
-      64
-    ),
-    new THREE.MeshPhysicalMaterial({
-      color: 0x4e9bc9,
-      transparent: true,
-      opacity: 0.72,
-      roughness: 0.12,
-      clearcoat: 0.7
-    })
-  );
-
-water.rotation.x =
-  -Math.PI / 2;
-
-water.position.set(
-  55,
-  0.04,
-  -45
+scene.add(
+  world
 );
 
-world.add(water);
 
-function addTree(x, z, scale = 1) {
+/* =========================================================
+   LOADERS
+========================================================= */
 
-  const tree =
-    new THREE.Group();
+const gltfLoader =
+  new GLTFLoader();
 
-  const trunk =
-    new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        0.28 * scale,
-        0.48 * scale,
-        4.2 * scale,
-        10
-      ),
-      new THREE.MeshStandardMaterial({
-        color: 0x69472f,
-        roughness: 1
-      })
+
+const fbxLoader =
+  new FBXLoader();
+
+
+const objLoader =
+  new OBJLoader();
+
+
+const mtlLoader =
+  new MTLLoader();
+
+
+const stlLoader =
+  new STLLoader();
+
+
+/* =========================================================
+   UTILITY
+========================================================= */
+
+function msg(text) {
+
+  state.feed.unshift({
+
+    text,
+
+    time:
+      performance.now()
+
+  });
+
+
+  state.feed =
+    state.feed.slice(
+      0,
+      5
     );
 
-  trunk.position.y =
-    2.1 * scale;
-
-  trunk.castShadow = true;
-
-  tree.add(trunk);
-
-  for (let i = 0; i < 3; i++) {
-
-    const crown =
-      new THREE.Mesh(
-        new THREE.IcosahedronGeometry(
-          (1.25 + i * 0.12) * scale,
-          1
-        ),
-        new THREE.MeshStandardMaterial({
-          color: pick([
-            0x3d753a,
-            0x4c8542,
-            0x5a9148
-          ]),
-          roughness: 0.95
-        })
-      );
-
-    crown.position.set(
-      rand(-0.45, 0.45) * scale,
-      (4.1 + i * 0.58) * scale,
-      rand(-0.45, 0.45) * scale
-    );
-
-    crown.castShadow = true;
-
-    tree.add(crown);
-  }
-
-  tree.position.set(
-    x,
-    0,
-    z
-  );
-
-  world.add(tree);
 }
 
-function addRock(x, z, scale = 1) {
 
-  const rock =
-    new THREE.Mesh(
-      new THREE.DodecahedronGeometry(
-        scale
-      ),
-      new THREE.MeshStandardMaterial({
-        color: 0x777c75,
-        roughness: 0.98
-      })
-    );
-
-  rock.position.set(
-    x,
-    scale * 0.7,
-    z
-  );
-
-  rock.rotation.set(
-    rand(0, 2),
-    rand(0, 2),
-    rand(0, 2)
-  );
-
-  rock.castShadow = true;
-  rock.receiveShadow = true;
-
-  world.add(rock);
-}
-
-for (let i = 0; i < 150; i++) {
-
-  const x =
-    rand(-170, 170);
-
-  const z =
-    rand(-170, 170);
+function saveGame() {
 
   if (
-    Math.hypot(x, z) < 16 ||
-    Math.hypot(
-      x - 55,
-      z + 45
-    ) < 32
+    !state.player
   ) {
-    continue;
+    return;
   }
 
-  if (Math.random() < 0.68) {
 
-    addTree(
-      x,
-      z,
-      rand(0.75, 1.35)
-    );
+  Object.assign(
 
-  } else {
+    state.save,
 
-    addRock(
-      x,
-      z,
-      rand(0.55, 1.8)
-    );
-  }
+    {
+
+      x:
+        state.player.x,
+
+      y:
+        state.player.y,
+
+      z:
+        state.player.z,
+
+      hp:
+        state.player.hp,
+
+      stamina:
+        state.player.stamina,
+
+      hunger:
+        state.player.hunger
+
+    }
+
+  );
+
+
+  localStorage.setItem(
+
+    SAVE_KEY,
+
+    JSON.stringify(
+      state.save
+    )
+
+  );
+
 }
 
-/* ===============================
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+function resize() {
+
+  renderer.setSize(
+
+    host.clientWidth,
+
+    host.clientHeight,
+
+    false
+
+  );
+
+
+  camera.aspect =
+
+    host.clientWidth /
+
+    host.clientHeight;
+
+
+  camera.updateProjectionMatrix();
+
+}
+
+
+window.addEventListener(
+  "resize",
+  resize
+);
+
+
+resize();
+
+
+/* =========================================================
+   WORLD
+========================================================= */
+
+function makeWorld() {
+
+
+  const ground =
+    new THREE.Mesh(
+
+      new THREE.PlaneGeometry(
+        360,
+        360
+      ),
+
+      new THREE.MeshStandardMaterial({
+
+        color:
+          0x58834a,
+
+        roughness:
+          0.97
+
+      })
+
+    );
+
+
+  ground.rotation.x =
+    -Math.PI / 2;
+
+
+  ground.receiveShadow =
+    true;
+
+
+  world.add(
+    ground
+  );
+
+
+  /* WATER */
+
+  const water =
+    new THREE.Mesh(
+
+      new THREE.CircleGeometry(
+        28,
+        64
+      ),
+
+      new THREE.MeshPhysicalMaterial({
+
+        color:
+          0x4c9bca,
+
+        transparent:
+          true,
+
+        opacity:
+          0.72,
+
+        roughness:
+          0.12,
+
+        clearcoat:
+          0.7
+
+      })
+
+    );
+
+
+  water.rotation.x =
+    -Math.PI / 2;
+
+
+  water.position.set(
+    55,
+    0.04,
+    -45
+  );
+
+
+  world.add(
+    water
+  );
+
+
+  /* TREES + ROCKS */
+
+  for (
+    let i = 0;
+    i < 150;
+    i++
+  ) {
+
+
+    const x =
+      rand(
+        -170,
+        170
+      );
+
+
+    const z =
+      rand(
+        -170,
+        170
+      );
+
+
+    if (
+      Math.hypot(
+        x,
+        z
+      ) < 16
+    ) {
+      continue;
+    }
+
+
+    if (
+      Math.random() <
+      0.68
+    ) {
+
+
+      const scale =
+        rand(
+          0.8,
+          1.35
+        );
+
+
+      const tree =
+        new THREE.Group();
+
+
+      const trunk =
+        new THREE.Mesh(
+
+          new THREE.CylinderGeometry(
+
+            0.28 *
+            scale,
+
+            0.48 *
+            scale,
+
+            4.3 *
+            scale,
+
+            10
+
+          ),
+
+          new THREE.MeshStandardMaterial({
+
+            color:
+              0x6b482f,
+
+            roughness:
+              1
+
+          })
+
+        );
+
+
+      trunk.position.y =
+        2.15 *
+        scale;
+
+
+      trunk.castShadow =
+        true;
+
+
+      tree.add(
+        trunk
+      );
+
+
+      for (
+        let j = 0;
+        j < 3;
+        j++
+      ) {
+
+
+        const crown =
+          new THREE.Mesh(
+
+            new THREE.IcosahedronGeometry(
+
+              (
+                1.2 +
+                j *
+                0.12
+              ) *
+              scale,
+
+              1
+
+            ),
+
+            new THREE.MeshStandardMaterial({
+
+              color:
+                pick([
+                  0x3f733a,
+                  0x4d8542,
+                  0x5a9148
+                ]),
+
+              roughness:
+                0.95
+
+            })
+
+          );
+
+
+        crown.position.set(
+
+          rand(
+            -0.4,
+            0.4
+          ) *
+          scale,
+
+          (
+            4 +
+            j *
+            0.55
+          ) *
+          scale,
+
+          rand(
+            -0.4,
+            0.4
+          ) *
+          scale
+
+        );
+
+
+        crown.castShadow =
+          true;
+
+
+        tree.add(
+          crown
+        );
+
+      }
+
+
+      tree.position.set(
+        x,
+        0,
+        z
+      );
+
+
+      world.add(
+        tree
+      );
+
+
+    } else {
+
+
+      const size =
+        rand(
+          0.5,
+          1.8
+        );
+
+
+      const rock =
+        new THREE.Mesh(
+
+          new THREE.DodecahedronGeometry(
+            size
+          ),
+
+          new THREE.MeshStandardMaterial({
+
+            color:
+              0x777c75,
+
+            roughness:
+              0.98
+
+          })
+
+        );
+
+
+      rock.position.set(
+
+        x,
+
+        size *
+        0.65,
+
+        z
+
+      );
+
+
+      rock.rotation.set(
+
+        rand(
+          0,
+          2
+        ),
+
+        rand(
+          0,
+          2
+        ),
+
+        rand(
+          0,
+          2
+        )
+
+      );
+
+
+      rock.castShadow =
+        true;
+
+
+      rock.receiveShadow =
+        true;
+
+
+      world.add(
+        rock
+      );
+
+    }
+
+  }
+
+}
+
+
+makeWorld();
+
+
+/* =========================================================
    PLAYER
-================================ */
+========================================================= */
 
 function createFallbackPlayer() {
+
 
   const group =
     new THREE.Group();
 
+
   const body =
     new THREE.Mesh(
+
       new THREE.CapsuleGeometry(
+
         0.32,
         0.9,
         6,
         10
+
       ),
+
       new THREE.MeshStandardMaterial({
-        color: 0x334b6a,
-        roughness: 0.75
+
+        color:
+          0x344e6c,
+
+        roughness:
+          0.75
+
       })
+
     );
+
+
+  body.position.y =
+    1.1;
+
 
   const head =
     new THREE.Mesh(
+
       new THREE.SphereGeometry(
+
         0.24,
         18,
         14
+
       ),
+
       new THREE.MeshStandardMaterial({
-        color: 0xd6ad8a,
-        roughness: 0.8
+
+        color:
+          0xd6ad8a,
+
+        roughness:
+          0.8
+
       })
+
     );
 
-  body.position.y = 1.1;
-  head.position.y = 1.92;
+
+  head.position.y =
+    1.92;
+
 
   group.add(
     body,
     head
   );
 
-  group.traverse(object => {
 
-    if (object.isMesh) {
+  group.traverse(
+    object => {
 
-      object.castShadow = true;
-      object.receiveShadow = true;
+      if (
+        object.isMesh
+      ) {
+
+        object.castShadow =
+          true;
+
+        object.receiveShadow =
+          true;
+
+      }
+
     }
-  });
+  );
+
 
   return group;
+
 }
 
-function makeMixer(entity, clips) {
 
-  if (!clips?.length) {
+/* =========================================================
+   AUTO SIZE MODELS
+
+   This does NOT change the model design.
+   It only makes models usable at proper game size.
+========================================================= */
+
+function normalizeModel(
+  model,
+  targetHeight = 1.8
+) {
+
+
+  model.updateMatrixWorld(
+    true
+  );
+
+
+  const box =
+    new THREE.Box3()
+      .setFromObject(
+        model
+      );
+
+
+  const size =
+    new THREE.Vector3();
+
+
+  box.getSize(
+    size
+  );
+
+
+  if (
+    size.y >
+    0
+  ) {
+
+
+    const scale =
+      targetHeight /
+      size.y;
+
+
+    model.scale.multiplyScalar(
+      scale
+    );
+
+  }
+
+
+  model.updateMatrixWorld(
+    true
+  );
+
+
+  const box2 =
+    new THREE.Box3()
+      .setFromObject(
+        model
+      );
+
+
+  const center =
+    new THREE.Vector3();
+
+
+  box2.getCenter(
+    center
+  );
+
+
+  model.position.x -=
+    center.x;
+
+
+  model.position.z -=
+    center.z;
+
+
+  model.position.y -=
+    box2.min.y;
+
+
+  model.traverse(
+    object => {
+
+
+      if (
+        object.isMesh
+      ) {
+
+
+        object.castShadow =
+          true;
+
+
+        object.receiveShadow =
+          true;
+
+
+        if (
+          object.material?.map
+        ) {
+
+
+          object.material
+            .map
+            .colorSpace =
+            THREE.SRGBColorSpace;
+
+        }
+
+      }
+
+    }
+  );
+
+
+  return model;
+
+}
+
+
+/* =========================================================
+   AUTO MODEL LOADER
+
+   GLB
+   GLTF
+   FBX
+   OBJ
+   STL
+========================================================= */
+
+function extension(path) {
+
+  return path
+    .split("?")[0]
+    .split(".")
+    .pop()
+    .toLowerCase();
+
+}
+
+
+async function loadOne(
+  path
+) {
+
+
+  const type =
+    extension(
+      path
+    );
+
+
+  /* GLB */
+
+  if (
+    type === "glb" ||
+    type === "gltf"
+  ) {
+
+
+    const gltf =
+      await gltfLoader.loadAsync(
+        path
+      );
+
+
+    return {
+
+      scene:
+        gltf.scene,
+
+      clips:
+        gltf.animations ||
+        [],
+
+      type
+
+    };
+
+  }
+
+
+  /* FBX */
+
+  if (
+    type === "fbx"
+  ) {
+
+
+    const model =
+      await fbxLoader.loadAsync(
+        path
+      );
+
+
+    return {
+
+      scene:
+        model,
+
+      clips:
+        model.animations ||
+        [],
+
+      type
+
+    };
+
+  }
+
+
+  /* OBJ */
+
+  if (
+    type === "obj"
+  ) {
+
+
+    let materials =
+      null;
+
+
+    try {
+
+
+      materials =
+        await mtlLoader.loadAsync(
+
+          path.replace(
+            /\.obj$/i,
+            ".mtl"
+          )
+
+        );
+
+
+      materials.preload();
+
+
+    } catch {}
+
+
+    if (
+      materials
+    ) {
+
+
+      objLoader.setMaterials(
+        materials
+      );
+
+    }
+
+
+    const model =
+      await objLoader.loadAsync(
+        path
+      );
+
+
+    objLoader.setMaterials(
+      null
+    );
+
+
+    return {
+
+      scene:
+        model,
+
+      clips: [],
+
+      type
+
+    };
+
+  }
+
+
+  /* STL */
+
+  if (
+    type === "stl"
+  ) {
+
+
+    const geometry =
+      await stlLoader.loadAsync(
+        path
+      );
+
+
+    geometry.computeVertexNormals();
+
+
+    const model =
+      new THREE.Mesh(
+
+        geometry,
+
+        new THREE.MeshStandardMaterial({
+
+          color:
+            0xc7c9cd,
+
+          roughness:
+            0.78
+
+        })
+
+      );
+
+
+    return {
+
+      scene:
+        model,
+
+      clips: [],
+
+      type
+
+    };
+
+  }
+
+
+  throw new Error(
+    "Unsupported file type"
+  );
+
+}
+
+
+/* =========================================================
+   TRY MULTIPLE FILE TYPES
+========================================================= */
+
+async function tryCandidates(
+  definition
+) {
+
+
+  for (
+    const file of
+    definition.files
+  ) {
+
+
+    try {
+
+
+      const asset =
+        await loadOne(
+          file
+        );
+
+
+      return {
+
+        ...asset,
+
+        file
+
+      };
+
+
+    } catch {}
+
+
+  }
+
+
+  return null;
+
+}
+
+
+/* =========================================================
+   ANIMATIONS
+========================================================= */
+
+function makeMixer(
+  entity,
+  clips
+) {
+
+
+  entity.clips =
+    clips ||
+    [];
+
+
+  if (
+    !entity.clips.length
+  ) {
     return;
   }
+
 
   entity.mixer =
     new THREE.AnimationMixer(
       entity.model
     );
 
-  entity.clips = clips;
-
-  entity.currentAction = null;
 
   state.mixers.push(
     entity.mixer
   );
+
 }
+
 
 function findClip(
   entity,
   names
 ) {
 
-  if (!entity.clips?.length) {
+
+  if (
+    !entity.clips?.length
+  ) {
     return null;
   }
 
-  for (const name of names) {
+
+  for (
+    const name of
+    names
+  ) {
+
 
     const clip =
       entity.clips.find(
-        clip =>
-          clip.name
+
+        animation =>
+          animation.name
             .toLowerCase()
-            .includes(name)
+            .includes(
+              name
+            )
+
       );
 
-    if (clip) {
+
+    if (
+      clip
+    ) {
+
       return clip;
+
     }
+
   }
 
-  return entity.clips[0] || null;
+
+  return (
+    entity.clips[0] ||
+    null
+  );
+
 }
+
 
 function play(
   entity,
   mode
 ) {
 
-  if (!entity?.mixer) {
-    return;
-  }
 
   if (
-    entity.animMode === mode
+    !entity?.mixer ||
+    entity.animMode ===
+    mode
   ) {
     return;
   }
 
-  entity.animMode = mode;
 
-  const animations = {
+  const types = {
 
     idle: [
       "idle",
@@ -646,261 +1769,400 @@ function play(
     hurt: [
       "hurt",
       "damage"
-    ],
-
-    sleep: [
-      "sleep"
     ]
+
   };
+
 
   const clip =
     findClip(
+
       entity,
-      animations[mode] ||
+
+      types[mode] ||
       [mode]
+
     );
 
-  if (!clip) {
+
+  if (
+    !clip
+  ) {
     return;
   }
 
+
   const next =
     entity.mixer
-      .clipAction(clip);
+      .clipAction(
+        clip
+      );
+
 
   if (
     entity.currentAction &&
-    entity.currentAction !== next
+    entity.currentAction !==
+    next
   ) {
 
+
     entity.currentAction
-      .fadeOut(0.12);
+      .fadeOut(
+        0.12
+      );
+
   }
+
 
   next
     .reset()
-    .fadeIn(0.12)
+    .fadeIn(
+      0.12
+    )
     .play();
+
 
   entity.currentAction =
     next;
+
+
+  entity.animMode =
+    mode;
+
 }
+
+
+/* =========================================================
+   PLAYER MODEL
+========================================================= */
 
 async function loadPlayer() {
 
+
   const player = {
 
-    x: state.save.x,
-    y: state.save.y,
-    z: state.save.z,
+    x:
+      state.save.x,
+
+    y:
+      state.save.y,
+
+    z:
+      state.save.z,
 
     yaw: 0,
-    pitch: -0.12,
 
-    hp: state.save.hp,
-    stamina: state.save.stamina,
-    hunger: state.save.hunger,
+    pitch:
+      -0.12,
 
-    speed: 4.8,
+    hp:
+      state.save.hp,
 
-    model: null,
+    stamina:
+      state.save.stamina,
 
-    mixer: null,
+    hunger:
+      state.save.hunger,
+
+    speed:
+      4.8,
+
+    model:
+      null,
+
+    mixer:
+      null,
+
     clips: [],
+
     animMode: ""
+
   };
+
 
   try {
 
-    const gltf =
-      await loader.loadAsync(
+
+    const asset =
+      await loadOne(
         "assets/player/player.glb"
       );
 
+
     player.model =
-      gltf.scene;
+      normalizeModel(
+        asset.scene,
+        1.9
+      );
 
-    player.model.traverse(
-      object => {
-
-        if (object.isMesh) {
-
-          object.castShadow = true;
-          object.receiveShadow = true;
-        }
-      }
-    );
 
     makeMixer(
       player,
-      gltf.animations || []
+      asset.clips
     );
+
 
     play(
       player,
       "idle"
     );
 
+
   } catch {
+
 
     player.model =
       createFallbackPlayer();
 
+
     msg(
       "player.glb missing — temporary 3D player used"
     );
+
   }
 
+
   player.model.position.set(
+
     player.x,
     player.y,
     player.z
+
   );
+
 
   world.add(
     player.model
   );
 
+
   state.player =
     player;
+
 }
 
-/* ===============================
-   LOAD PAL MODELS
-================================ */
 
-async function loadPalModels() {
+/* =========================================================
+   LOAD ALL AVAILABLE PALS
+========================================================= */
 
-  let loaded = 0;
+async function loadPals() {
 
-  for (const def of PALS) {
 
-    try {
+  let loaded =
+    0;
 
-      const gltf =
-        await loader.loadAsync(
-          def.model
-        );
 
-      gltf.scene.traverse(
-        object => {
+  for (
+    const definition of
+    PAL_LIBRARY
+  ) {
 
-          if (object.isMesh) {
 
-            object.castShadow = true;
-            object.receiveShadow = true;
-
-            if (
-              object.material?.map
-            ) {
-
-              object.material
-                .map
-                .colorSpace =
-                THREE.SRGBColorSpace;
-            }
-          }
-        }
+    const asset =
+      await tryCandidates(
+        definition
       );
 
-      state.modelCache.set(
-        def.id,
-        {
-          scene: gltf.scene,
-          clips:
-            gltf.animations || []
-        }
-      );
 
-      loaded++;
+    if (
+      !asset
+    ) {
 
-    } catch {
 
       console.warn(
+
         "Missing model:",
-        def.model
+
+        definition.name
+
       );
+
+
+      continue;
+
     }
+
+
+    normalizeModel(
+
+      asset.scene,
+
+      definition.height
+
+    );
+
+
+    state.cache.set(
+
+      definition.id,
+
+      {
+
+        ...asset,
+
+        source:
+          asset.scene
+
+      }
+
+    );
+
+
+    loaded++;
+
+
+    console.log(
+
+      `Loaded ${definition.name} from ${asset.file}`
+
+    );
+
   }
+
 
   return loaded;
+
 }
 
-/* ===============================
-   SPAWN PALS
-================================ */
 
-function spawnCreature(
-  def,
-  x,
-  z,
-  level = 1
+/* =========================================================
+   CLONE PAL
+========================================================= */
+
+function cloneAsset(
+  cached
 ) {
 
-  const cached =
-    state.modelCache.get(
-      def.id
+
+  if (
+
+    cached.type ===
+    "glb" ||
+
+    cached.type ===
+    "gltf" ||
+
+    cached.type ===
+    "fbx"
+
+  ) {
+
+
+    return cloneSkinned(
+      cached.source
     );
 
-  if (!cached) {
-    return null;
   }
 
-  const model =
-    cloneSkinned(
-      cached.scene
-    );
 
-  model.scale.setScalar(
-    def.scale *
-    (
-      def.boss
-        ? 1.35
-        : 1
-    )
+  return cached.source.clone(
+    true
   );
 
+}
+
+
+/* =========================================================
+   SPAWN PAL
+========================================================= */
+
+function spawnCreature(
+
+  definition,
+
+  x,
+
+  z,
+
+  level = 1
+
+) {
+
+
+  const cached =
+    state.cache.get(
+      definition.id
+    );
+
+
+  if (
+    !cached
+  ) {
+
+    return null;
+
+  }
+
+
+  const model =
+    cloneAsset(
+      cached
+    );
+
+
   model.position.set(
+
     x,
-    def.mount === "flying"
+
+    definition.mount ===
+    "flying"
+
       ? (
-          def.boss
+          definition.boss
             ? 7
             : 2.2
         )
+
       : 0,
+
     z
+
   );
 
-  world.add(model);
+
+  world.add(
+    model
+  );
+
 
   const maxHp =
-    def.hp *
+
+    definition.hp *
+
     (
-      def.boss
-        ? 2.2
+      definition.boss
+        ? 2.15
         : 1
     );
 
+
   const creature = {
 
-    def,
+    def:
+      definition,
+
     model,
 
     x,
+
     z,
 
     level,
 
-    hp: maxHp,
+    hp:
+      maxHp,
+
     maxHp,
 
-    alive: true,
+    alive:
+      true,
 
     boss:
-      !!def.boss,
+      !!definition.boss,
 
-    aggressive: false,
+    aggressive:
+      false,
 
     direction:
       rand(
@@ -915,101 +2177,183 @@ function spawnCreature(
         3500
       ),
 
-    mixer: null,
-    clips:
-      cached.clips,
+    mixer:
+      null,
 
-    animMode: "",
-    currentAction: null
+    clips:
+      cached.clips ||
+      [],
+
+    animMode:
+      "",
+
+    currentAction:
+      null,
+
+    bobSeed:
+      rand(
+        0,
+        10
+      )
+
   };
 
+
   makeMixer(
+
     creature,
-    cached.clips
+
+    creature.clips
+
   );
 
+
   play(
+
     creature,
-    def.mount === "flying"
+
+    definition.mount ===
+    "flying"
+
       ? "fly"
+
       : "idle"
+
   );
+
 
   model.traverse(
     object => {
 
-      if (object.isMesh) {
+
+      if (
+        object.isMesh
+      ) {
+
 
         object.userData
           .creature =
           creature;
+
       }
+
     }
   );
+
 
   state.creatures.push(
     creature
   );
 
+
   return creature;
+
 }
+
+
+/* =========================================================
+   SPAWN WORLD
+========================================================= */
 
 function spawnWorldPals() {
 
-  const available =
-    PALS.filter(
-      def =>
-        state.modelCache.has(
-          def.id
+
+  const definitions =
+
+    PAL_LIBRARY.filter(
+
+      definition =>
+        state.cache.has(
+          definition.id
         )
+
     );
 
-  available.forEach(
-    (def, index) => {
+
+  definitions.forEach(
+
+    (
+      definition,
+      index
+    ) => {
+
 
       const angle =
+
         index /
+
         Math.max(
           1,
-          available.length
-        ) *
+          definitions.length
+        )
+
+        *
+
         Math.PI *
         2;
 
+
       const radius =
-        def.boss
+
+        definition.boss
+
           ? 115
+
           : 38 +
             (
-              index % 4
+              index %
+              5
             ) *
-            18;
+            16;
+
 
       spawnCreature(
-        def,
 
-        Math.sin(angle) *
-          radius +
-          rand(-5, 5),
+        definition,
 
-        Math.cos(angle) *
-          radius +
-          rand(-5, 5),
+        Math.sin(
+          angle
+        ) *
+        radius +
+        rand(
+          -5,
+          5
+        ),
 
-        def.boss
+        Math.cos(
+          angle
+        ) *
+        radius +
+        rand(
+          -5,
+          5
+        ),
+
+        definition.boss
+
           ? 25
+
           : Math.floor(
-              rand(2, 14)
+              rand(
+                2,
+                15
+              )
             )
+
       );
+
     }
+
   );
 
+
   const normal =
-    available.filter(
-      def =>
-        !def.boss
+
+    definitions.filter(
+      definition =>
+        !definition.boss
     );
+
 
   for (
     let i = 0;
@@ -1018,9 +2362,12 @@ function spawnWorldPals() {
     i++
   ) {
 
+
     spawnCreature(
 
-      pick(normal),
+      pick(
+        normal
+      ),
 
       rand(
         -125,
@@ -1038,49 +2385,114 @@ function spawnWorldPals() {
           16
         )
       )
+
     );
+
   }
+
 }
 
-/* ===============================
-   CAPTURE ORBS
-================================ */
 
-function createOrb(tier) {
+/* =========================================================
+   REAL HYPER SPHERE MODEL
+========================================================= */
 
-  const def =
-    ORBS[tier];
+async function loadHyperSphere() {
+
+
+  try {
+
+
+    const asset =
+      await loadOne(
+        "assets/items/hyper-sphere.glb"
+      );
+
+
+    state.sphereModel =
+      normalizeModel(
+        asset.scene,
+        0.36
+      );
+
+
+  } catch {
+
+
+    state.sphereModel =
+      null;
+
+  }
+
+}
+
+
+/* =========================================================
+   CREATE SPHERE
+
+   Other spheres are original GALAXY 3D spheres.
+========================================================= */
+
+function createSphere(
+  tier
+) {
+
+
+  if (
+    tier === 3 &&
+    state.sphereModel
+  ) {
+
+
+    const model =
+      cloneSkinned(
+        state.sphereModel
+      );
+
+
+    return model;
+
+  }
+
+
+  const definition =
+    SPHERES[tier];
+
 
   const group =
     new THREE.Group();
+
 
   const shell =
     new THREE.Mesh(
 
       new THREE.SphereGeometry(
         0.18,
-        20,
-        16
+        24,
+        18
       ),
 
       new THREE.MeshStandardMaterial({
 
         color:
-          def.color,
+          definition.color,
 
         metalness:
-          0.35,
+          0.38,
 
         roughness:
           0.2,
 
         emissive:
-          def.color,
+          definition.color,
 
         emissiveIntensity:
-          0.18
+          0.15
+
       })
+
     );
+
 
   const ring =
     new THREE.Mesh(
@@ -1089,56 +2501,71 @@ function createOrb(tier) {
         0.185,
         0.022,
         8,
-        26
+        28
       ),
 
       new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        metalness: 0.55,
-        roughness: 0.25
+
+        color:
+          0xffffff,
+
+        metalness:
+          0.55,
+
+        roughness:
+          0.25
+
       })
+
     );
+
 
   ring.rotation.x =
     Math.PI / 2;
+
 
   group.add(
     shell,
     ring
   );
 
-  group.traverse(
-    object => {
-
-      if (object.isMesh) {
-        object.castShadow = true;
-      }
-    }
-  );
 
   return group;
+
 }
+
+
+/* =========================================================
+   TARGET
+========================================================= */
 
 const raycaster =
   new THREE.Raycaster();
 
+
 function findTarget() {
 
-  raycaster
-    .setFromCamera(
-      new THREE.Vector2(
-        0,
-        0
-      ),
-      camera
-    );
+
+  raycaster.setFromCamera(
+
+    new THREE.Vector2(
+      0,
+      0
+    ),
+
+    camera
+
+  );
+
 
   const meshes = [];
+
 
   for (
     const creature of
     state.creatures
   ) {
+
 
     if (
       !creature.alive ||
@@ -1147,48 +2574,76 @@ function findTarget() {
       continue;
     }
 
+
     creature.model.traverse(
       object => {
 
-        if (object.isMesh) {
+
+        if (
+          object.isMesh
+        ) {
 
           meshes.push(
             object
           );
+
         }
+
       }
     );
+
   }
 
+
   const hit =
+
     raycaster
       .intersectObjects(
         meshes,
         false
       )[0];
 
-  state.target =
-    hit &&
-    hit.distance < 30
 
-      ? hit.object
-          .userData
-          .creature ||
-        null
+  state.target =
+
+    hit &&
+    hit.distance <
+    30
+
+      ? (
+          hit.object
+            .userData
+            .creature ||
+          null
+        )
 
       : null;
+
 }
 
+
+/* =========================================================
+   CAPTURE CHANCE
+========================================================= */
+
 function captureChance(
+
   creature,
+
   tier =
-    state.save.selectedOrb
+    state.save
+      .selectedSphere
+
 ) {
 
+
   const weaken =
+
     1 -
+
     creature.hp /
     creature.maxHp;
+
 
   return clamp(
 
@@ -1200,7 +2655,8 @@ function captureChance(
 
     *
 
-    ORBS[tier].bonus
+    SPHERES[tier]
+      .bonus
 
     /
 
@@ -1215,13 +2671,22 @@ function captureChance(
     0.03,
 
     0.95
+
   );
+
 }
+
+
+/* =========================================================
+   ATTACK
+========================================================= */
 
 function attackTarget() {
 
+
   const creature =
     state.target;
+
 
   if (
     !creature?.alive ||
@@ -1230,53 +2695,71 @@ function attackTarget() {
     return;
   }
 
+
   creature.hp =
     Math.max(
 
       0,
 
       creature.hp -
+
       (
         18 +
         state.save.level *
         1.5
       )
+
     );
+
 
   creature.aggressive =
     true;
+
 
   play(
     creature,
     "hurt"
   );
 
+
   msg(
+
     `${creature.def.name} HP ${Math.ceil(creature.hp)}`
+
   );
 
+
   if (
-    creature.hp <= 0
+    creature.hp <=
+    0
   ) {
+
 
     creature.alive =
       false;
 
+
     creature.model.visible =
       false;
+
 
     msg(
       `${creature.def.name} defeated`
     );
 
+
   } else {
 
+
     setTimeout(
+
       () => {
+
 
         if (
           creature.alive
         ) {
+
 
           play(
 
@@ -1288,15 +2771,28 @@ function attackTarget() {
               ? "fly"
 
               : "run"
+
           );
+
         }
+
       },
+
       320
+
     );
+
   }
+
 }
 
-function beginOrb() {
+
+/* =========================================================
+   HOLD Q
+========================================================= */
+
+function beginSphere() {
+
 
   if (
     state.charging ||
@@ -1305,51 +2801,74 @@ function beginOrb() {
     return;
   }
 
+
   const tier =
-    state.save.selectedOrb;
+    state.save
+      .selectedSphere;
+
 
   if (
     (
-      state.save.orbs[tier] ||
+      state.save
+        .spheres[tier] ||
       0
     ) <= 0
   ) {
 
+
     msg(
-      "No capture Orbs"
+      "No capture Spheres"
     );
 
+
     return;
+
   }
+
 
   state.charging =
     true;
 
+
   state.chargeStart =
     performance.now();
 
-  state.heldOrb =
-    createOrb(tier);
+
+  state.heldSphere =
+    createSphere(
+      tier
+    );
+
 
   scene.add(
-    state.heldOrb
+    state.heldSphere
   );
+
 }
 
-function updateHeldOrb() {
+
+/* =========================================================
+   SPHERE IN HAND
+========================================================= */
+
+function updateHeldSphere() {
+
 
   if (
-    !state.heldOrb
+    !state.heldSphere
   ) {
     return;
   }
 
+
   const direction =
     new THREE.Vector3();
+
 
   camera.getWorldDirection(
     direction
   );
+
 
   const right =
     new THREE.Vector3()
@@ -1359,60 +2878,71 @@ function updateHeldOrb() {
       )
       .normalize();
 
-  state.heldOrb
+
+  state.heldSphere
     .position
     .copy(
       camera.position
     )
     .add(
+
       direction
         .clone()
         .multiplyScalar(
           1.15
         )
+
     )
     .add(
+
       right
         .multiplyScalar(
           0.42
         )
+
     )
     .add(
+
       new THREE.Vector3(
         0,
         -0.34,
         0
       )
+
     );
 
-  state.heldOrb
+
+  state.heldSphere
     .rotation
     .y +=
     0.06;
+
 }
 
-function releaseOrb() {
+
+/* =========================================================
+   RELEASE Q
+========================================================= */
+
+function releaseSphere() {
+
 
   if (
     !state.charging ||
-    !state.heldOrb
+    !state.heldSphere
   ) {
     return;
   }
+
 
   const tier =
-    state.save.selectedOrb;
+    state.save
+      .selectedSphere;
 
-  if (
-    (
-      state.save.orbs[tier] ||
-      0
-    ) <= 0
-  ) {
-    return;
-  }
 
-  state.save.orbs[tier]--;
+  state.save
+    .spheres[tier]--;
+
 
   const charge =
     clamp(
@@ -1420,35 +2950,35 @@ function releaseOrb() {
       (
         performance.now() -
         state.chargeStart
-      ) /
+      )
+
+      /
+
       900,
 
       0.25,
 
       1
+
     );
+
 
   const direction =
     new THREE.Vector3();
+
 
   camera.getWorldDirection(
     direction
   );
 
-  const mesh =
-    state.heldOrb;
-
-  state.heldOrb =
-    null;
-
-  state.charging =
-    false;
 
   state.projectiles.push({
 
-    mesh,
+    mesh:
+      state.heldSphere,
 
     velocity:
+
       direction
         .multiplyScalar(
           13 +
@@ -1456,6 +2986,7 @@ function releaseOrb() {
           charge
         )
         .add(
+
           new THREE.Vector3(
             0,
             3.2 +
@@ -1463,86 +2994,131 @@ function releaseOrb() {
             charge,
             0
           )
+
         ),
 
-    life: 5,
+    life:
+      5,
 
     tier,
 
-    dead: false
+    dead:
+      false
+
   });
 
+
+  state.heldSphere =
+    null;
+
+
+  state.charging =
+    false;
+
+
   msg(
-    `${ORBS[tier].name} thrown`
+    `${SPHERES[tier].name} thrown`
   );
+
 }
+
+
+/* =========================================================
+   CAPTURE
+========================================================= */
 
 function resolveCapture(
   creature,
   projectile
 ) {
 
+
   projectile.dead =
     true;
+
 
   projectile.mesh.visible =
     false;
 
+
   const chance =
     captureChance(
+
       creature,
+
       projectile.tier
+
     );
+
 
   creature.model.visible =
     false;
 
+
   msg(
+
     `Capturing ${creature.def.name}… ${Math.round(chance * 100)}%`
+
   );
 
+
   setTimeout(
+
     () => {
+
 
       if (
         Math.random() <
         chance
       ) {
 
+
         creature.alive =
           false;
+
 
         state.save.box.push(
           creature.def.id
         );
+
 
         if (
           state.save.party.length <
           5
         ) {
 
+
           state.save.party.push(
             creature.def.id
           );
+
         }
 
+
         state.save.xp +=
+
           40 *
           creature.def.rarity;
+
 
         msg(
           `${creature.def.name} captured!`
         );
 
+
         saveGame();
 
+
       } else {
+
 
         creature.model.visible =
           true;
 
+
         creature.aggressive =
           true;
+
 
         play(
 
@@ -1554,24 +3130,39 @@ function resolveCapture(
             ? "fly"
 
             : "run"
+
         );
+
 
         msg(
           `${creature.def.name} escaped!`
         );
+
       }
+
     },
 
     900
+
   );
+
 }
 
-function updateProjectiles(dt) {
+
+/* =========================================================
+   SPHERE PROJECTILES
+========================================================= */
+
+function updateProjectiles(
+  dt
+) {
+
 
   for (
     const projectile of
     state.projectiles
   ) {
+
 
     if (
       projectile.dead
@@ -1579,35 +3170,44 @@ function updateProjectiles(dt) {
       continue;
     }
 
+
     projectile.velocity.y -=
+
       9.8 *
       dt;
 
-    projectile.mesh
-      .position
+
+    projectile.mesh.position
       .addScaledVector(
+
         projectile.velocity,
+
         dt
+
       );
 
-    projectile.mesh
-      .rotation
-      .x +=
+
+    projectile.mesh.rotation.x +=
+
       dt *
       8;
 
-    projectile.mesh
-      .rotation
-      .z +=
+
+    projectile.mesh.rotation.z +=
+
       dt *
       5;
 
-    projectile.life -= dt;
+
+    projectile.life -=
+      dt;
+
 
     for (
       const creature of
       state.creatures
     ) {
+
 
       if (
         !creature.alive ||
@@ -1615,6 +3215,7 @@ function updateProjectiles(dt) {
       ) {
         continue;
       }
+
 
       if (
 
@@ -1628,56 +3229,85 @@ function updateProjectiles(dt) {
 
         (
           creature.boss
-            ? 2.3
-            : 1.4
+            ? 2.5
+            : 1.5
         )
+
       ) {
 
+
         resolveCapture(
+
           creature,
+
           projectile
+
         );
 
+
         break;
+
       }
+
     }
 
+
     if (
-      projectile.life <= 0 ||
-      projectile.mesh.position.y <
-      0.1
+      projectile.life <=
+      0 ||
+
+      projectile.mesh
+        .position
+        .y <
+      0.08
     ) {
+
 
       projectile.dead =
         true;
+
     }
+
   }
 
+
   state.projectiles =
+
     state.projectiles.filter(
+
       projectile => {
+
 
         if (
           projectile.dead
         ) {
 
+
           scene.remove(
             projectile.mesh
           );
 
+
           return false;
+
         }
 
+
         return true;
+
       }
+
     );
+
 }
 
-/* ===============================
-   PARTY / SUMMON
-================================ */
+
+/* =========================================================
+   SUMMON
+========================================================= */
 
 function summonCompanion() {
+
 
   if (
     state.mounted
@@ -1685,152 +3315,193 @@ function summonCompanion() {
     return;
   }
 
+
   if (
     state.companion
   ) {
+
 
     world.remove(
       state.companion.model
     );
 
+
     state.companion =
       null;
+
 
     msg(
       "Companion recalled"
     );
 
+
     return;
+
   }
+
 
   const id =
     state.save.party[0];
 
-  const def =
-    PALS.find(
-      item =>
-        item.id === id
+
+  const definition =
+
+    PAL_LIBRARY.find(
+
+      definition =>
+        definition.id ===
+        id
+
     );
+
 
   const cached =
-    def &&
-    state.modelCache.get(
-      def.id
+
+    definition &&
+
+    state.cache.get(
+      definition.id
     );
 
+
   if (
-    !def ||
+    !definition ||
     !cached
   ) {
+
 
     msg(
       "Capture a Pal first"
     );
 
+
     return;
+
   }
 
+
   const model =
-    cloneSkinned(
-      cached.scene
+    cloneAsset(
+      cached
     );
 
-  model.scale.setScalar(
-    def.scale
-  );
 
   model.position.set(
 
-    state.player.x + 2,
+    state.player.x +
+    2,
 
-    def.mount === "flying"
+    definition.mount ===
+    "flying"
+
       ? 2
+
       : 0,
 
-    state.player.z + 2
+    state.player.z +
+    2
+
   );
 
-  world.add(model);
+
+  world.add(
+    model
+  );
+
 
   const companion = {
 
-    def,
+    def:
+      definition,
+
     model,
 
     clips:
-      cached.clips,
+      cached.clips ||
+      [],
 
-    mixer: null,
+    mixer:
+      null,
 
-    currentAction: null,
+    currentAction:
+      null,
 
-    animMode: "",
+    animMode:
+      "",
 
-    alive: true
+    alive:
+      true
+
   };
 
+
   makeMixer(
+
     companion,
-    cached.clips
+
+    companion.clips
+
   );
+
 
   play(
 
     companion,
 
-    def.mount === "flying"
+    definition.mount ===
+    "flying"
+
       ? "fly"
+
       : "idle"
+
   );
+
 
   state.companion =
     companion;
 
+
   msg(
-    `${def.name} summoned`
+    `${definition.name} summoned`
   );
+
 }
+
+
+/* =========================================================
+   MOUNT
+========================================================= */
 
 function toggleMount() {
 
+
   const companion =
     state.companion;
+
 
   if (
     !companion?.def.mount
   ) {
 
+
     msg(
       "Summon a mountable Pal first"
     );
 
-    return;
-  }
-
-  if (
-
-    !state.mounted &&
-
-    companion.model
-      .position
-      .distanceTo(
-        state.player.model.position
-      ) >
-      5
-  ) {
-
-    msg(
-      "Move closer to your Pal"
-    );
 
     return;
+
   }
+
 
   state.mounted =
     !state.mounted;
 
+
   state.player.model.visible =
     !state.mounted;
+
 
   msg(
 
@@ -1839,26 +3510,44 @@ function toggleMount() {
       ? `Mounted ${companion.def.name}`
 
       : `Dismounted ${companion.def.name}`
+
   );
+
 }
 
+
+/* =========================================================
+   COMPANION
+========================================================= */
+
 function updateCompanion(
+
   dt,
+
   forward,
+
   right,
+
   sprint
+
 ) {
+
 
   const companion =
     state.companion;
 
-  if (!companion) {
+
+  if (
+    !companion
+  ) {
     return;
   }
+
 
   if (
     state.mounted
   ) {
+
 
     const speed =
 
@@ -1873,15 +3562,18 @@ function updateCompanion(
               : 7
           );
 
+
     const sin =
       Math.sin(
         state.player.yaw
       );
 
+
     const cos =
       Math.cos(
         state.player.yaw
       );
+
 
     companion.model.position.x +=
 
@@ -1897,11 +3589,10 @@ function updateCompanion(
 
       *
 
-      speed
-
-      *
+      speed *
 
       dt;
+
 
     companion.model.position.z +=
 
@@ -1917,16 +3608,16 @@ function updateCompanion(
 
       *
 
-      speed
-
-      *
+      speed *
 
       dt;
+
 
     if (
       companion.def.mount ===
       "flying"
     ) {
+
 
       if (
         state.keys.has(
@@ -1934,10 +3625,14 @@ function updateCompanion(
         )
       ) {
 
+
         companion.model.position.y +=
+
           6 *
           dt;
+
       }
+
 
       if (
         state.keys.has(
@@ -1945,27 +3640,39 @@ function updateCompanion(
         )
       ) {
 
+
         companion.model.position.y -=
+
           6 *
           dt;
+
       }
+
 
       companion.model.position.y =
         clamp(
+
           companion.model.position.y,
+
           0.2,
+
           35
+
         );
+
 
       play(
         companion,
         "fly"
       );
 
+
     } else {
+
 
       companion.model.position.y =
         0;
+
 
       play(
 
@@ -1983,45 +3690,66 @@ function updateCompanion(
             )
 
           : "idle"
+
       );
+
     }
+
 
     companion.model.rotation.y =
       state.player.yaw;
 
+
     state.player.x =
       companion.model.position.x;
+
 
     state.player.y =
       companion.model.position.y;
 
+
     state.player.z =
       companion.model.position.z;
 
+
     return;
+
   }
 
+
   const targetX =
+
     state.player.x +
+
     Math.cos(
       state.player.yaw
     ) *
     2.6;
 
+
   const targetZ =
+
     state.player.z -
+
     Math.sin(
       state.player.yaw
     ) *
     2.6;
 
+
   const dx =
+
     targetX -
+
     companion.model.position.x;
 
+
   const dz =
+
     targetZ -
+
     companion.model.position.z;
+
 
   const distance =
     Math.hypot(
@@ -2029,11 +3757,15 @@ function updateCompanion(
       dz
     );
 
+
   if (
-    distance > 1.5
+    distance >
+    1.5
   ) {
 
+
     companion.model.position.x +=
+
       dx *
       Math.min(
         1,
@@ -2041,7 +3773,9 @@ function updateCompanion(
         3.2
       );
 
+
     companion.model.position.z +=
+
       dz *
       Math.min(
         1,
@@ -2049,11 +3783,13 @@ function updateCompanion(
         3.2
       );
 
+
     companion.model.rotation.y =
       Math.atan2(
         dx,
         dz
       );
+
 
     play(
 
@@ -2065,9 +3801,12 @@ function updateCompanion(
         ? "fly"
 
         : "run"
+
     );
 
+
   } else {
+
 
     play(
 
@@ -2079,39 +3818,29 @@ function updateCompanion(
         ? "fly"
 
         : "idle"
+
     );
+
   }
 
-  if (
-    companion.def.mount ===
-    "flying"
-  ) {
-
-    companion.model.position.y =
-
-      1.8 +
-
-      Math.sin(
-        performance.now() *
-        0.002
-      ) *
-      0.25;
-  }
 }
 
-/* ===============================
+
+/* =========================================================
    WILD PAL AI
-================================ */
+========================================================= */
 
 function updateWild(
   dt,
   now
 ) {
 
+
   for (
     const creature of
     state.creatures
   ) {
+
 
     if (
       !creature.alive ||
@@ -2120,13 +3849,18 @@ function updateWild(
       continue;
     }
 
+
     const dx =
+
       state.player.x -
       creature.x;
 
+
     const dz =
+
       state.player.z -
       creature.z;
+
 
     const distance =
       Math.hypot(
@@ -2134,10 +3868,13 @@ function updateWild(
         dz
       );
 
+
     if (
       creature.aggressive &&
-      distance < 28
+      distance <
+      28
     ) {
+
 
       creature.direction =
         Math.atan2(
@@ -2145,29 +3882,39 @@ function updateWild(
           dz
         );
 
+
       const speed =
+
         creature.def.speed *
+
         (
           creature.boss
             ? 1.05
             : 0.85
         );
 
+
       creature.x +=
 
         Math.sin(
           creature.direction
         ) *
+
         speed *
+
         dt;
+
 
       creature.z +=
 
         Math.cos(
           creature.direction
         ) *
+
         speed *
+
         dt;
+
 
       play(
 
@@ -2179,7 +3926,9 @@ function updateWild(
           ? "fly"
 
           : "run"
+
       );
+
 
       if (
 
@@ -2192,69 +3941,92 @@ function updateWild(
 
       ) {
 
+
         state.player.hp =
           Math.max(
 
             0,
 
             state.player.hp -
+
             (
               creature.boss
                 ? 16
                 : 6
             )
+
           );
+
 
         play(
           creature,
           "attack"
         );
 
+
         msg(
           `${creature.def.name} hit you`
         );
+
       }
 
+
     } else {
+
 
       if (
         now >
         creature.changeAt
       ) {
 
+
         creature.direction +=
+
           rand(
             -1.3,
             1.3
           );
 
+
         creature.changeAt =
+
           now +
+
           rand(
             1600,
             3800
           );
+
       }
 
+
       const speed =
+
         creature.def.speed *
         0.16;
+
 
       creature.x +=
 
         Math.sin(
           creature.direction
         ) *
+
         speed *
+
         dt;
+
 
       creature.z +=
 
         Math.cos(
           creature.direction
         ) *
+
         speed *
+
         dt;
+
 
       play(
 
@@ -2266,22 +4038,29 @@ function updateWild(
           ? "fly"
 
           : "walk"
+
       );
+
     }
+
 
     creature.model.position.x =
       creature.x;
 
+
     creature.model.position.z =
       creature.z;
 
+
     creature.model.rotation.y =
       creature.direction;
+
 
     if (
       creature.def.mount ===
       "flying"
     ) {
+
 
       creature.model.position.y =
 
@@ -2290,29 +4069,46 @@ function updateWild(
           ? 7
 
           : 2.2 +
+
             Math.sin(
+
               now *
               0.0015 +
-              creature.x
+
+              creature.bobSeed
+
             ) *
             0.4;
+
     }
+
   }
+
 }
 
-/* ===============================
+
+/* =========================================================
    HUD
-================================ */
+========================================================= */
 
 function updateHUD() {
 
+
   const setBar =
-    (selector, value) => {
+    (
+      id,
+      value
+    ) => {
+
 
       const element =
-        $(selector);
+        $(id);
 
-      if (element) {
+
+      if (
+        element
+      ) {
+
 
         element.style.width =
           `${clamp(
@@ -2320,255 +4116,339 @@ function updateHUD() {
             0,
             100
           )}%`;
+
       }
+
     };
+
 
   setBar(
     "#hpBar",
     state.player.hp
   );
 
+
   setBar(
     "#staminaBar",
     state.player.stamina
   );
+
 
   setBar(
     "#foodBar",
     state.player.hunger
   );
 
-  $("#hpText").textContent =
-    Math.round(
-      state.player.hp
-    );
 
-  $("#staminaText").textContent =
-    Math.round(
-      state.player.stamina
-    );
+  if (
+    $("#hpText")
+  ) {
 
-  $("#foodText").textContent =
-    Math.round(
-      state.player.hunger
-    );
 
-  $("#levelText").textContent =
-    `LV ${state.save.level}`;
+    $("#hpText").textContent =
+      Math.round(
+        state.player.hp
+      );
 
-  const target =
-    state.target;
+  }
+
+
+  if (
+    $("#staminaText")
+  ) {
+
+
+    $("#staminaText").textContent =
+      Math.round(
+        state.player.stamina
+      );
+
+  }
+
+
+  if (
+    $("#foodText")
+  ) {
+
+
+    $("#foodText").textContent =
+      Math.round(
+        state.player.hunger
+      );
+
+  }
+
 
   const card =
     $("#targetCard");
 
+
   if (
-    target?.alive
+    card
   ) {
 
-    card.hidden =
-      false;
 
-    $("#targetName").textContent =
-      target.def.name +
-      (
-        target.boss
-          ? " • BOSS"
-          : ""
-      );
+    if (
+      state.target?.alive
+    ) {
 
-    $("#targetMeta").textContent =
-      `LV ${target.level} • ${target.def.element}`;
 
-    $("#captureChance").textContent =
-      `${Math.round(
-        captureChance(target) *
-        100
-      )}%`;
+      card.hidden =
+        false;
 
-    $("#targetHpBar").style.width =
-      `${100 *
-      target.hp /
-      target.maxHp}%`;
 
-  } else {
+      $("#targetName").textContent =
 
-    card.hidden =
-      true;
+        state.target.def.name +
+
+        (
+          state.target.boss
+            ? " • BOSS"
+            : ""
+        );
+
+
+      $("#targetMeta").textContent =
+
+        `LV ${state.target.level} • ${state.target.def.element}`;
+
+
+      $("#captureChance").textContent =
+
+        `${Math.round(
+          captureChance(
+            state.target
+          ) *
+          100
+        )}%`;
+
+
+      $("#targetHpBar")
+        .style
+        .width =
+
+        `${100 *
+        state.target.hp /
+        state.target.maxHp}%`;
+
+
+    } else {
+
+
+      card.hidden =
+        true;
+
+    }
+
   }
 
-  $("#feed").innerHTML =
 
-    state.feed
+  if (
+    $("#feed")
+  ) {
 
-      .filter(
-        item =>
-          performance.now() -
-          item.time <
-          5200
-      )
 
-      .map(
-        item =>
-          `<div>${item.text}</div>`
-      )
+    $("#feed").innerHTML =
 
-      .join("");
+      state.feed
 
-  $("#orbHud").innerHTML =
+        .filter(
 
-    ORBS.map(
-      (orb, index) => `
+          item =>
 
-        <div
-          class="orb-slot ${
+            performance.now() -
+            item.time <
+            5200
+
+        )
+
+        .map(
+
+          item =>
+            `<div>${item.text}</div>`
+
+        )
+
+        .join("");
+
+  }
+
+
+  if (
+    $("#orbHud")
+  ) {
+
+
+    $("#orbHud").innerHTML =
+
+      SPHERES.map(
+
+        (
+          sphere,
+          index
+        ) => `
+
+          <div class="orb-slot ${
             index ===
-            state.save.selectedOrb
+            state.save.selectedSphere
               ? "active"
               : ""
-          }"
-        >
+          }">
 
-          <strong>
-            ${index + 1}
-          </strong>
+            <strong>
+              ${index + 1}
+            </strong>
 
-          <span>
-            ${orb.name}
-          </span>
+            <span>
+              ${sphere.name}
+            </span>
 
-          <small>
-            x${
-              state.save.orbs[index] ||
-              0
+            <small>
+              x${
+                state.save.spheres[index] ||
+                0
+              }
+            </small>
+
+          </div>
+
+        `
+
+      ).join("");
+
+  }
+
+
+  if (
+    $("#partyHud")
+  ) {
+
+
+    $("#partyHud").innerHTML =
+
+      state.save.party
+
+        .slice(
+          0,
+          5
+        )
+
+        .map(
+          id => {
+
+
+            const definition =
+
+              PAL_LIBRARY.find(
+
+                definition =>
+                  definition.id ===
+                  id
+
+              );
+
+
+            if (
+              !definition
+            ) {
+              return "";
             }
-          </small>
 
-        </div>
-      `
-    ).join("");
 
-  $("#partyHud").innerHTML =
+            return `
 
-    state.save.party
+              <div class="party-card">
 
-      .slice(
-        0,
-        5
-      )
+                <strong>
+                  ${definition.name}
+                </strong>
 
-      .map(
-        id => {
+                <span>
+                  ${definition.element}
+                </span>
 
-          const def =
-            PALS.find(
-              item =>
-                item.id === id
-            );
+              </div>
 
-          if (!def) {
-            return "";
+            `;
+
           }
 
-          return `
+        )
 
-            <div class="party-card">
+        .join("");
 
-              <strong>
-                ${def.name}
-              </strong>
+  }
 
-              <span>
-                ${def.element}
-                •
-                ${
-                  def.mount ||
-                  "companion"
-                }
-              </span>
-
-            </div>
-          `;
-        }
-      )
-
-      .join("");
 }
 
-/* ===============================
-   RESIZE
-================================ */
 
-function resize() {
-
-  renderer.setSize(
-    host.clientWidth,
-    host.clientHeight,
-    false
-  );
-
-  camera.aspect =
-    host.clientWidth /
-    host.clientHeight;
-
-  camera.updateProjectionMatrix();
-}
-
-window.addEventListener(
-  "resize",
-  resize
-);
-
-resize();
-
-/* ===============================
+/* =========================================================
    CONTROLS
-================================ */
+========================================================= */
 
 canvas.addEventListener(
+
   "click",
+
   () =>
-    canvas
-      .requestPointerLock?.()
+    canvas.requestPointerLock?.()
+
 );
 
+
 document.addEventListener(
+
   "mousemove",
+
   event => {
+
 
     if (
       document.pointerLockElement !==
       canvas ||
+
       !state.player
     ) {
       return;
     }
 
+
     state.player.yaw -=
+
       event.movementX *
       0.0024;
+
 
     state.player.pitch =
       clamp(
 
         state.player.pitch -
+
         event.movementY *
         0.0017,
 
         -0.5,
 
         0.28
+
       );
+
   }
+
 );
 
+
 document.addEventListener(
+
   "keydown",
+
   event => {
+
 
     state.keys.add(
       event.code
     );
+
 
     if (
       /^Digit[1-5]$/
@@ -2577,12 +4457,18 @@ document.addEventListener(
         )
     ) {
 
-      state.save.selectedOrb =
+
+      state.save.selectedSphere =
+
         Number(
-          event.code.slice(-1)
+          event.code.slice(
+            -1
+          )
         ) -
         1;
+
     }
+
 
     if (
       event.code ===
@@ -2590,8 +4476,11 @@ document.addEventListener(
       !event.repeat
     ) {
 
-      beginOrb();
+
+      beginSphere();
+
     }
+
 
     if (
       event.code ===
@@ -2599,8 +4488,11 @@ document.addEventListener(
       !event.repeat
     ) {
 
+
       summonCompanion();
+
     }
+
 
     if (
       event.code ===
@@ -2608,99 +4500,151 @@ document.addEventListener(
       !event.repeat
     ) {
 
+
       toggleMount();
+
     }
+
   }
+
 );
 
+
 document.addEventListener(
+
   "keyup",
+
   event => {
+
 
     state.keys.delete(
       event.code
     );
+
 
     if (
       event.code ===
       "KeyQ"
     ) {
 
-      releaseOrb();
+
+      releaseSphere();
+
     }
+
   }
+
 );
 
+
 document.addEventListener(
+
   "mousedown",
+
   event => {
+
 
     if (
 
-      event.button === 0 &&
+      event.button ===
+      0 &&
 
       document.pointerLockElement ===
       canvas
+
     ) {
 
+
       attackTarget();
+
     }
+
   }
+
 );
 
-/* ===============================
+
+/* =========================================================
    MENU
-================================ */
+========================================================= */
 
 const menu =
   $("#menuPanel");
 
+
 $("#menuButton")
-  .addEventListener(
+  ?.addEventListener(
+
     "click",
+
     () => {
+
 
       menu.hidden =
         !menu.hidden;
+
     }
+
   );
 
+
 $("#resumeButton")
-  .addEventListener(
+  ?.addEventListener(
+
     "click",
+
     () => {
+
 
       menu.hidden =
         true;
 
-      canvas
-        .requestPointerLock?.();
+
+      canvas.requestPointerLock?.();
+
     }
+
   );
 
+
 $("#resetButton")
-  .addEventListener(
+  ?.addEventListener(
+
     "click",
+
     () => {
+
 
       localStorage.removeItem(
         SAVE_KEY
       );
 
+
       location.reload();
+
     }
+
   );
 
-/* ===============================
-   START GAME
-================================ */
+
+/* =========================================================
+   START
+========================================================= */
 
 await loadPlayer();
 
-const loaded =
-  await loadPalModels();
 
-if (!loaded) {
+await loadHyperSphere();
+
+
+const loaded =
+  await loadPals();
+
+
+if (
+  !loaded
+) {
+
 
   loading.innerHTML = `
 
@@ -2711,43 +4655,52 @@ if (!loaded) {
       </div>
 
       <h1>
-        3D PAL MODELS MISSING
+        NO PAL MODEL FOUND
       </h1>
 
       <p>
-        Add .glb files inside
-        <b>assets/pals/</b>
-        and reload.
+        Put extracted GLB, FBX, OBJ or STL files inside assets/pals
       </p>
 
     </div>
+
   `;
+
 
 } else {
 
+
   spawnWorldPals();
 
-  loading.remove();
+
+  loading?.remove();
+
 
   msg(
-    `Loaded ${loaded} original 3D Pal model${loaded === 1 ? "" : "s"}`
+
+    `Loaded ${loaded} 3D Pal model${
+      loaded === 1
+        ? ""
+        : "s"
+    }`
+
   );
+
 }
 
-/* ===============================
-   MAIN LOOP
-================================ */
+
+/* =========================================================
+   MAIN GAME LOOP
+========================================================= */
 
 let last =
   performance.now();
 
-function loop(now) {
 
-  if (
-    !state.running
-  ) {
-    return;
-  }
+function loop(
+  now
+) {
+
 
   const dt =
     clamp(
@@ -2761,13 +4714,17 @@ function loop(now) {
       0,
 
       0.05
+
     );
+
 
   last =
     now;
 
+
   const player =
     state.player;
+
 
   const forward =
 
@@ -2789,6 +4746,7 @@ function loop(now) {
         : 0
     );
 
+
   const right =
 
     (
@@ -2809,6 +4767,7 @@ function loop(now) {
         : 0
     );
 
+
   const sprint =
 
     state.keys.has(
@@ -2820,24 +4779,34 @@ function loop(now) {
     player.stamina >
     2;
 
+
+  /* PLAYER */
+
   if (
     !state.mounted
   ) {
 
+
     const speed =
+
       sprint
+
         ? 7.5
+
         : player.speed;
+
 
     const sin =
       Math.sin(
         player.yaw
       );
 
+
     const cos =
       Math.cos(
         player.yaw
       );
+
 
     player.x +=
 
@@ -2853,11 +4822,10 @@ function loop(now) {
 
       *
 
-      speed
-
-      *
+      speed *
 
       dt;
+
 
     player.z +=
 
@@ -2873,11 +4841,10 @@ function loop(now) {
 
       *
 
-      speed
-
-      *
+      speed *
 
       dt;
+
 
     player.x =
       clamp(
@@ -2886,6 +4853,7 @@ function loop(now) {
         170
       );
 
+
     player.z =
       clamp(
         player.z,
@@ -2893,16 +4861,25 @@ function loop(now) {
         170
       );
 
-    player.y = 0;
+
+    player.y =
+      0;
+
 
     player.model.position.set(
+
       player.x,
+
       player.y,
+
       player.z
+
     );
+
 
     player.model.rotation.y =
       player.yaw;
+
 
     play(
 
@@ -2920,8 +4897,13 @@ function loop(now) {
           )
 
         : "idle"
+
     );
+
   }
+
+
+  /* STAMINA */
 
   player.stamina =
     clamp(
@@ -2947,24 +4929,32 @@ function loop(now) {
       0,
 
       100
+
     );
+
+
+  /* FOOD */
 
   player.hunger =
     clamp(
 
       player.hunger -
+
       0.12 *
       dt,
 
       0,
 
       100
+
     );
+
 
   if (
     player.hunger <
     8
   ) {
+
 
     player.hp =
       Math.max(
@@ -2972,42 +4962,65 @@ function loop(now) {
         0,
 
         player.hp -
+
         0.45 *
         dt
+
       );
+
   }
 
+
   updateCompanion(
+
     dt,
+
     forward,
+
     right,
+
     sprint
+
   );
+
 
   updateWild(
     dt,
     now
   );
 
+
   updateProjectiles(
     dt
   );
 
+
   findTarget();
 
-  updateHeldOrb();
+
+  updateHeldSphere();
+
 
   state.mixers.forEach(
+
     mixer =>
-      mixer.update(dt)
+      mixer.update(
+        dt
+      )
+
   );
 
-  const cameraDistance =
+
+  /* THIRD PERSON CAMERA */
+
+  const distance =
+
     state.mounted
       ? 9.5
       : 6.7;
 
-  const cameraTargetY =
+
+  const targetY =
 
     state.mounted &&
     state.companion
@@ -3020,6 +5033,7 @@ function loop(now) {
 
       : 1.55;
 
+
   camera.position.set(
 
     player.x +
@@ -3027,10 +5041,12 @@ function loop(now) {
     Math.sin(
       player.yaw
     ) *
-    cameraDistance,
+    distance,
 
     player.y +
+
     3.4 +
+
     player.pitch *
     3.2,
 
@@ -3039,27 +5055,41 @@ function loop(now) {
     Math.cos(
       player.yaw
     ) *
-    cameraDistance
+    distance
+
   );
+
 
   camera.lookAt(
+
     player.x,
-    cameraTargetY,
+
+    targetY,
+
     player.z
+
   );
 
+
+  /* DAY NIGHT */
+
   state.worldTime +=
+
     dt *
     0.12;
+
 
   if (
     state.worldTime >=
     24
   ) {
 
+
     state.worldTime -=
       24;
+
   }
+
 
   const daylight =
     clamp(
@@ -3093,17 +5123,25 @@ function loop(now) {
       0.14,
 
       1
+
     );
 
+
   sun.intensity =
+
     0.35 +
+
     daylight *
     2;
 
+
   hemi.intensity =
+
     0.28 +
+
     daylight *
     1.2;
+
 
   sun.position.set(
 
@@ -3118,6 +5156,7 @@ function loop(now) {
     70,
 
     18 +
+
     daylight *
     60,
 
@@ -3130,59 +5169,97 @@ function loop(now) {
 
     ) *
     70
+
   );
 
-  $("#clockText").textContent =
 
-    `DAY 1 • ${
-      String(
-        Math.floor(
-          state.worldTime
+  if (
+    $("#clockText")
+  ) {
+
+
+    $("#clockText").textContent =
+
+      `DAY 1 • ${
+
+        String(
+          Math.floor(
+            state.worldTime
+          )
         )
-      )
-      .padStart(
-        2,
-        "0"
-      )
-    }:${
-      String(
-        Math.floor(
-          (
-            state.worldTime %
-            1
-          ) *
-          60
+        .padStart(
+          2,
+          "0"
         )
-      )
-      .padStart(
-        2,
-        "0"
-      )
-    }`;
+
+      }:${
+
+        String(
+
+          Math.floor(
+
+            (
+              state.worldTime %
+              1
+            )
+
+            *
+
+            60
+
+          )
+
+        )
+        .padStart(
+          2,
+          "0"
+        )
+
+      }`;
+
+  }
+
 
   updateHUD();
 
+
   renderer.render(
+
     scene,
+
     camera
+
   );
 
+
+  /* AUTO SAVE */
+
   if (
+
     now -
+
     state.lastSave >
+
     5000
+
   ) {
+
 
     saveGame();
 
+
     state.lastSave =
       now;
+
   }
+
 
   requestAnimationFrame(
     loop
   );
+
 }
+
 
 requestAnimationFrame(
   loop
