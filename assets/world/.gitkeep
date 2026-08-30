@@ -1,1 +1,3844 @@
+import * as THREE from "https://esm.sh/three@0.160.0";
+import { GLTFLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+import { FBXLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/FBXLoader.js";
+import { OBJLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/OBJLoader.js";
+import { MTLLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/MTLLoader.js";
+import { STLLoader } from "https://esm.sh/three@0.160.0/examples/jsm/loaders/STLLoader.js";
+import { clone as cloneSkinned } from "https://esm.sh/three@0.160.0/examples/jsm/utils/SkeletonUtils.js";
 
+const SAVE_KEY = "galaxy-pals-procedural-world-v2";
+
+const PAL_LIBRARY = [
+  { name: "Anubis", files: ["assets/pals/anubis.glb", "assets/pals/anubis.fbx"] },
+  { name: "Astegon", files: ["assets/pals/astegon.obj", "assets/pals/astegon.glb"] },
+  { name: "Chikipi", files: ["assets/pals/chikipi.glb"] },
+  { name: "Chillet", files: ["assets/pals/chillet.fbx", "assets/pals/chillet.glb"] },
+  { name: "Direhowl", files: ["assets/pals/direhowl.fbx", "assets/pals/direhowl.glb"] },
+  { name: "Dupin", files: ["assets/pals/dupin.glb"] },
+  { name: "Fenglope", files: ["assets/pals/fenglope.fbx", "assets/pals/fenglope.glb"] },
+  { name: "Foxparks", files: ["assets/pals/foxparks.glb", "assets/pals/foxparks.fbx"] },
+  { name: "Grizzbolt", files: ["assets/pals/grizzbolt.fbx", "assets/pals/grizzbolt.glb"] },
+  { name: "Jetragon", files: ["assets/pals/jetragon.stl", "assets/pals/jetragon.glb"] },
+  { name: "Katress", files: ["assets/pals/katress.fbx", "assets/pals/katress.glb"] },
+  { name: "Kitsun", files: ["assets/pals/kitsun.glb", "assets/pals/kitsun.stl"] },
+  { name: "Leezpunk", files: ["assets/pals/leezpunk.fbx", "assets/pals/leezpunk.glb"] },
+  { name: "Lily Everhart", files: ["assets/pals/lily-everhart.fbx", "assets/pals/lily-everhart.glb"] },
+  { name: "Lovander", files: ["assets/pals/lovander.fbx", "assets/pals/lovander.glb"] },
+  { name: "Lunaris", files: ["assets/pals/lunaris.fbx", "assets/pals/lunaris.glb"] },
+  { name: "Mammorest", files: ["assets/pals/mammorest.glb"] },
+  { name: "Mau", files: ["assets/pals/mau.obj", "assets/pals/mau.glb"] },
+  { name: "Mossanda", files: ["assets/pals/mossanda.fbx", "assets/pals/mossanda.glb"] },
+  { name: "Mossanda Lux", files: ["assets/pals/mossanda-lux.glb", "assets/pals/mossanda-lux.fbx"] },
+  { name: "Tarantriss", files: ["assets/pals/tarantriss.glb", "assets/pals/tarantriss.fbx"] },
+  { name: "Digtoise", files: ["assets/pals/digtoise.fbx", "assets/pals/digtoise.glb"] },
+  { name: "Swee", files: ["assets/pals/swee.obj", "assets/pals/swee.glb"] },
+  { name: "Univolt", files: ["assets/pals/univolt.fbx", "assets/pals/univolt.glb"] },
+  { name: "Temtem", files: ["assets/pals/temtem.glb", "assets/pals/temtem.fbx"] },
+  { name: "Sibelyx", files: ["assets/pals/sibelyx.glb", "assets/pals/sibelyx.fbx"] },
+  { name: "Cinnamoth", files: ["assets/pals/Test1.gltf"] }
+];
+
+const SPHERES = [
+  { name: "Basic Sphere", power: 0.34 },
+  { name: "Mega Sphere", power: 0.50 },
+  { name: "Giga Sphere", power: 0.67 },
+  { name: "Hyper Sphere", power: 0.82 },
+  { name: "Ultra Sphere", power: 0.94 }
+];
+
+const canvas = document.getElementById("gameCanvas");
+
+const loading = document.getElementById("loading");
+const zoneName = document.getElementById("zoneName");
+const clockText = document.getElementById("clockText");
+const levelText = document.getElementById("levelText");
+
+const targetCard = document.getElementById("targetCard");
+const targetName = document.getElementById("targetName");
+const targetMeta = document.getElementById("targetMeta");
+const captureChance = document.getElementById("captureChance");
+const targetHpBar = document.getElementById("targetHpBar");
+
+const hpBar = document.getElementById("hpBar");
+const hpText = document.getElementById("hpText");
+
+const staminaBar = document.getElementById("staminaBar");
+const staminaText = document.getElementById("staminaText");
+
+const foodBar = document.getElementById("foodBar");
+const foodText = document.getElementById("foodText");
+
+const partyHud = document.getElementById("partyHud");
+const feed = document.getElementById("feed");
+
+const sphereHud =
+  document.getElementById("sphereHud") ||
+  document.getElementById("orbHud");
+
+const menuButton = document.getElementById("menuButton");
+const menuPanel = document.getElementById("menuPanel");
+const resumeButton = document.getElementById("resumeButton");
+const resetButton = document.getElementById("resetButton");
+const backButton = document.getElementById("backButton");
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0x86bde8);
+
+scene.fog = new THREE.FogExp2(
+  0xaed5ef,
+  0.0024
+);
+
+const camera =
+  new THREE.PerspectiveCamera(
+    65,
+    innerWidth / innerHeight,
+    0.1,
+    2200
+  );
+
+const renderer =
+  new THREE.WebGLRenderer({
+    canvas,
+    antialias: true
+  });
+
+renderer.setPixelRatio(
+  Math.min(devicePixelRatio, 2)
+);
+
+renderer.setSize(
+  innerWidth,
+  innerHeight
+);
+
+renderer.shadowMap.enabled = true;
+
+renderer.shadowMap.type =
+  THREE.PCFSoftShadowMap;
+
+renderer.outputColorSpace =
+  THREE.SRGBColorSpace;
+
+
+/* ==========================================
+   LIGHTS
+========================================== */
+
+const hemisphere =
+  new THREE.HemisphereLight(
+    0xdff2ff,
+    0x586441,
+    2.2
+  );
+
+scene.add(hemisphere);
+
+const sun =
+  new THREE.DirectionalLight(
+    0xffffff,
+    2.4
+  );
+
+sun.position.set(
+  130,
+  180,
+  80
+);
+
+sun.castShadow = true;
+
+sun.shadow.mapSize.set(
+  2048,
+  2048
+);
+
+sun.shadow.camera.left = -180;
+sun.shadow.camera.right = 180;
+sun.shadow.camera.top = 180;
+sun.shadow.camera.bottom = -180;
+
+scene.add(sun);
+
+
+/* ==========================================
+   WORLD
+========================================== */
+
+const world =
+  new THREE.Group();
+
+scene.add(world);
+
+
+/* ==========================================
+   GAME VARIABLES
+========================================== */
+
+const clock =
+  new THREE.Clock();
+
+const raycaster =
+  new THREE.Raycaster();
+
+const center =
+  new THREE.Vector2(
+    0,
+    0
+  );
+
+const keys =
+  new Set();
+
+const palTemplates =
+  new Map();
+
+const mixers = [];
+
+const wildPals = [];
+
+const sphereProjectiles = [];
+
+let paused = false;
+
+let selectedSphere = 0;
+
+let currentTarget = null;
+
+let qHeld = false;
+
+let qCharge = 0;
+
+let cameraYaw = 0;
+
+let cameraPitch = -0.2;
+
+let dayTime = 8.5;
+
+
+/* ==========================================
+   SAVE SYSTEM
+========================================== */
+
+function loadSave() {
+
+  try {
+
+    return (
+      JSON.parse(
+        localStorage.getItem(
+          SAVE_KEY
+        )
+      ) || {}
+    );
+
+  } catch {
+
+    return {};
+
+  }
+
+}
+
+const save =
+  loadSave();
+
+const playerState = {
+
+  hp:
+    save.hp ?? 100,
+
+  stamina:
+    save.stamina ?? 100,
+
+  food:
+    save.food ?? 100,
+
+  level:
+    save.level ?? 1,
+
+  party:
+    save.party ?? [],
+
+  box:
+    save.box ?? [],
+
+  mounted: false,
+
+  summon: null
+
+};
+
+function persist() {
+
+  localStorage.setItem(
+    SAVE_KEY,
+    JSON.stringify({
+
+      hp:
+        playerState.hp,
+
+      stamina:
+        playerState.stamina,
+
+      food:
+        playerState.food,
+
+      level:
+        playerState.level,
+
+      party:
+        playerState.party,
+
+      box:
+        playerState.box
+
+    })
+  );
+
+}
+
+
+/* ==========================================
+   MESSAGE FEED
+========================================== */
+
+function msg(text) {
+
+  if (!feed) return;
+
+  const element =
+    document.createElement("div");
+
+  element.textContent =
+    text;
+
+  feed.prepend(
+    element
+  );
+
+  while (
+    feed.children.length > 5
+  ) {
+
+    feed.lastElementChild.remove();
+
+  }
+
+}
+
+
+/* ==========================================
+   MATERIAL HELPER
+========================================== */
+
+function makeMat(
+  color,
+  roughness = 0.85
+) {
+
+  return (
+    new THREE.MeshStandardMaterial({
+
+      color,
+
+      roughness,
+
+      metalness: 0.05
+
+    })
+  );
+
+}
+
+
+/* ==========================================
+   MESH HELPER
+========================================== */
+
+function addMesh(
+  geometry,
+  material,
+  x,
+  y,
+  z,
+  sx = 1,
+  sy = 1,
+  sz = 1
+) {
+
+  const mesh =
+    new THREE.Mesh(
+      geometry,
+      material
+    );
+
+  mesh.position.set(
+    x,
+    y,
+    z
+  );
+
+  mesh.scale.set(
+    sx,
+    sy,
+    sz
+  );
+
+  mesh.castShadow = true;
+
+  mesh.receiveShadow = true;
+
+  world.add(
+    mesh
+  );
+
+  return mesh;
+
+}
+
+
+/* ==========================================
+   TERRAIN HEIGHT
+========================================== */
+
+function terrainHeight(
+  x,
+  z
+) {
+
+  const broad =
+    Math.sin(
+      x * 0.013
+    ) * 4 +
+
+    Math.cos(
+      z * 0.011
+    ) * 4;
+
+  const detail =
+    Math.sin(
+      (x + z) * 0.028
+    ) * 1.7 +
+
+    Math.cos(
+      (x - z) * 0.021
+    ) * 1.5;
+
+  const mountain =
+    Math.max(
+
+      0,
+
+      Math.sin(
+        x * 0.006 + 1.7
+      ) +
+
+      Math.cos(
+        z * 0.006 - 0.5
+      ) -
+
+      1.05
+
+    ) * 22;
+
+  return (
+    broad +
+    detail +
+    mountain
+  );
+
+}
+
+
+/* ==========================================
+   BIOMES
+========================================== */
+
+function biomeAt(
+  x,
+  z
+) {
+
+  if (x > 210)
+    return "desert";
+
+  if (z < -220)
+    return "snow";
+
+  if (x < -230)
+    return "volcanic";
+
+  if (z > 230)
+    return "coast";
+
+  return "grassland";
+
+}
+
+function biomeColor(
+  biome
+) {
+
+  return ({
+
+    grassland:
+      0x6eab50,
+
+    desert:
+      0xc9a65e,
+
+    snow:
+      0xe8f1f3,
+
+    volcanic:
+      0x403936,
+
+    coast:
+      0x8ab46a
+
+  })[biome];
+
+}
+
+
+/* ==========================================
+   CREATE TERRAIN
+========================================== */
+
+function createTerrain() {
+
+  const size = 900;
+
+  const segments = 170;
+
+  const geometry =
+    new THREE.PlaneGeometry(
+      size,
+      size,
+      segments,
+      segments
+    );
+
+  geometry.rotateX(
+    -Math.PI / 2
+  );
+
+  const positions =
+    geometry.attributes.position;
+
+  const colors = [];
+
+  const color =
+    new THREE.Color();
+
+  for (
+    let i = 0;
+    i < positions.count;
+    i++
+  ) {
+
+    const x =
+      positions.getX(i);
+
+    const z =
+      positions.getZ(i);
+
+    const y =
+      terrainHeight(
+        x,
+        z
+      );
+
+    positions.setY(
+      i,
+      y
+    );
+
+    const biome =
+      biomeAt(
+        x,
+        z
+      );
+
+    color.setHex(
+      biomeColor(
+        biome
+      )
+    );
+
+    const variation =
+
+      (
+        Math.sin(
+          x * 0.12
+        ) +
+
+        Math.cos(
+          z * 0.13
+        )
+
+      ) * 0.025;
+
+    color.offsetHSL(
+      0,
+      0,
+      variation
+    );
+
+    colors.push(
+      color.r,
+      color.g,
+      color.b
+    );
+
+  }
+
+  geometry.setAttribute(
+
+    "color",
+
+    new THREE.Float32BufferAttribute(
+      colors,
+      3
+    )
+
+  );
+
+  geometry.computeVertexNormals();
+
+  const material =
+    new THREE.MeshStandardMaterial({
+
+      vertexColors: true,
+
+      roughness: 1
+
+    });
+
+  const terrain =
+    new THREE.Mesh(
+      geometry,
+      material
+    );
+
+  terrain.receiveShadow = true;
+
+  world.add(
+    terrain
+  );
+
+}
+
+
+/* ==========================================
+   WATER
+========================================== */
+
+function createWater() {
+
+  const water =
+    new THREE.Mesh(
+
+      new THREE.PlaneGeometry(
+        1100,
+        1100
+      ),
+
+      new THREE.MeshPhysicalMaterial({
+
+        color:
+          0x4aa7d8,
+
+        transparent:
+          true,
+
+        opacity:
+          0.72,
+
+        roughness:
+          0.18,
+
+        metalness:
+          0.05
+
+      })
+
+    );
+
+  water.rotation.x =
+    -Math.PI / 2;
+
+  water.position.y =
+    -4.7;
+
+  world.add(
+    water
+  );
+
+
+  const lake =
+    new THREE.Mesh(
+
+      new THREE.CircleGeometry(
+        70,
+        64
+      ),
+
+      new THREE.MeshPhysicalMaterial({
+
+        color:
+          0x2f89c2,
+
+        transparent:
+          true,
+
+        opacity:
+          0.8,
+
+        roughness:
+          0.12
+
+      })
+
+    );
+
+  lake.rotation.x =
+    -Math.PI / 2;
+
+  lake.position.set(
+
+    40,
+
+    terrainHeight(
+      40,
+      60
+    ) + 0.6,
+
+    60
+
+  );
+
+  world.add(
+    lake
+  );
+
+}
+
+
+/* ==========================================
+   TREES
+========================================== */
+
+function createTree(
+  x,
+  z,
+  snowy = false
+) {
+
+  const y =
+    terrainHeight(
+      x,
+      z
+    );
+
+  addMesh(
+
+    new THREE.CylinderGeometry(
+      0.6,
+      0.95,
+      6,
+      7
+    ),
+
+    makeMat(
+      0x76533b
+    ),
+
+    x,
+
+    y + 3,
+
+    z
+
+  );
+
+
+  const crownColor =
+    snowy
+      ? 0xd9edf0
+      : 0x2f7c43;
+
+
+  for (
+    let i = 0;
+    i < 3;
+    i++
+  ) {
+
+    const crown =
+      addMesh(
+
+        new THREE.ConeGeometry(
+          3.4 - i * 0.45,
+          5.5,
+          9
+        ),
+
+        makeMat(
+          crownColor
+        ),
+
+        x,
+
+        y + 6 + i * 2.2,
+
+        z
+
+      );
+
+    crown.rotation.y =
+      Math.random() *
+      Math.PI;
+
+  }
+
+}
+
+
+/* ==========================================
+   ROCKS
+========================================== */
+
+function createRock(
+  x,
+  z,
+  volcanic = false
+) {
+
+  const y =
+    terrainHeight(
+      x,
+      z
+    );
+
+  const rock =
+    addMesh(
+
+      new THREE.DodecahedronGeometry(
+        1.8,
+        0
+      ),
+
+      makeMat(
+        volcanic
+          ? 0x2d2725
+          : 0x71777c
+      ),
+
+      x,
+
+      y + 1.2,
+
+      z,
+
+      0.8 +
+        Math.random() * 1.8,
+
+      0.6 +
+        Math.random() * 1.8,
+
+      0.8 +
+        Math.random() * 1.8
+
+    );
+
+  rock.rotation.set(
+
+    Math.random(),
+
+    Math.random(),
+
+    Math.random()
+
+  );
+
+}
+
+
+/* ==========================================
+   WORLD OBJECTS
+========================================== */
+
+function createWorldProps() {
+
+  for (
+    let i = 0;
+    i < 180;
+    i++
+  ) {
+
+    const x =
+      THREE.MathUtils.randFloatSpread(
+        820
+      );
+
+    const z =
+      THREE.MathUtils.randFloatSpread(
+        820
+      );
+
+    const biome =
+      biomeAt(
+        x,
+        z
+      );
+
+
+    if (
+
+      biome === "grassland" ||
+
+      biome === "coast" ||
+
+      biome === "snow"
+
+    ) {
+
+      if (
+        Math.random() < 0.62
+      ) {
+
+        createTree(
+          x,
+          z,
+          biome === "snow"
+        );
+
+      } else {
+
+        createRock(
+          x,
+          z
+        );
+
+      }
+
+    }
+
+
+    else if (
+      biome === "desert"
+    ) {
+
+      createRock(
+        x,
+        z
+      );
+
+      if (
+        Math.random() < 0.25
+      ) {
+
+        const y =
+          terrainHeight(
+            x,
+            z
+          );
+
+        const cactus =
+          addMesh(
+
+            new THREE.CylinderGeometry(
+              0.45,
+              0.6,
+              4.5,
+              8
+            ),
+
+            makeMat(
+              0x5d8b4f
+            ),
+
+            x,
+
+            y + 2.25,
+
+            z
+
+          );
+
+        cactus.rotation.z =
+          THREE.MathUtils.randFloatSpread(
+            0.2
+          );
+
+      }
+
+    }
+
+
+    else {
+
+      createRock(
+        x,
+        z,
+        true
+      );
+
+    }
+
+  }
+
+
+  /* ANCIENT RUINS */
+
+  for (
+    let i = 0;
+    i < 8;
+    i++
+  ) {
+
+    const angle =
+      i / 8 *
+      Math.PI *
+      2;
+
+    const x =
+      -40 +
+      Math.cos(
+        angle
+      ) * 24;
+
+    const z =
+      30 +
+      Math.sin(
+        angle
+      ) * 24;
+
+    const y =
+      terrainHeight(
+        x,
+        z
+      );
+
+    addMesh(
+
+      new THREE.BoxGeometry(
+        3,
+        12,
+        3
+      ),
+
+      makeMat(
+        0x9a9688
+      ),
+
+      x,
+
+      y + 6,
+
+      z
+
+    );
+
+  }
+
+
+  /* BOSS ARENA */
+
+  const ring =
+    new THREE.Mesh(
+
+      new THREE.TorusGeometry(
+        24,
+        1.2,
+        10,
+        48
+      ),
+
+      makeMat(
+        0x625b52
+      )
+
+    );
+
+  ring.rotation.x =
+    Math.PI / 2;
+
+  ring.position.set(
+
+    150,
+
+    terrainHeight(
+      150,
+      -40
+    ) + 0.8,
+
+    -40
+
+  );
+
+  world.add(
+    ring
+  );
+
+
+  /* VOLCANO */
+
+  const volcano =
+    new THREE.Mesh(
+
+      new THREE.ConeGeometry(
+        50,
+        85,
+        40,
+        8,
+        true
+      ),
+
+      makeMat(
+        0x372d2a
+      )
+
+    );
+
+  volcano.position.set(
+
+    -330,
+
+    terrainHeight(
+      -330,
+      80
+    ) + 38,
+
+    80
+
+  );
+
+  volcano.castShadow =
+    true;
+
+  world.add(
+    volcano
+  );
+
+
+  const lava =
+    new THREE.Mesh(
+
+      new THREE.CircleGeometry(
+        18,
+        40
+      ),
+
+      new THREE.MeshStandardMaterial({
+
+        color:
+          0xff5b18,
+
+        emissive:
+          0xff2600,
+
+        emissiveIntensity:
+          2
+
+      })
+
+    );
+
+  lava.rotation.x =
+    -Math.PI / 2;
+
+  lava.position.set(
+
+    -330,
+
+    volcano.position.y + 42,
+
+    80
+
+  );
+
+  world.add(
+    lava
+  );
+
+}
+
+
+/* ==========================================
+   CLOUDS
+========================================== */
+
+function createSkyDecor() {
+
+  for (
+    let i = 0;
+    i < 28;
+    i++
+  ) {
+
+    const cloud =
+      new THREE.Group();
+
+    for (
+      let j = 0;
+      j < 4;
+      j++
+    ) {
+
+      const puff =
+        new THREE.Mesh(
+
+          new THREE.SphereGeometry(
+
+            5 +
+            Math.random() * 5,
+
+            12,
+
+            8
+
+          ),
+
+          new THREE.MeshBasicMaterial({
+
+            color:
+              0xffffff,
+
+            transparent:
+              true,
+
+            opacity:
+              0.75
+
+          })
+
+        );
+
+      puff.position.set(
+
+        j * 5 - 8,
+
+        Math.random() * 3,
+
+        Math.random() * 5
+
+      );
+
+      cloud.add(
+        puff
+      );
+
+    }
+
+
+    cloud.position.set(
+
+      THREE.MathUtils.randFloatSpread(
+        700
+      ),
+
+      70 +
+      Math.random() * 80,
+
+      THREE.MathUtils.randFloatSpread(
+        700
+      )
+
+    );
+
+    scene.add(
+      cloud
+    );
+
+  }
+
+}
+
+
+/* ==========================================
+   MODEL NORMALIZATION
+========================================== */
+
+function normalizeModel(
+  root,
+  targetHeight = 3.6
+) {
+
+  const box =
+    new THREE.Box3()
+      .setFromObject(
+        root
+      );
+
+  const size =
+    box.getSize(
+      new THREE.Vector3()
+    );
+
+  if (
+    size.y > 0.001
+  ) {
+
+    root.scale.multiplyScalar(
+
+      targetHeight /
+      size.y
+
+    );
+
+  }
+
+
+  const box2 =
+    new THREE.Box3()
+      .setFromObject(
+        root
+      );
+
+  const center2 =
+    box2.getCenter(
+      new THREE.Vector3()
+    );
+
+
+  root.position.x -=
+    center2.x;
+
+  root.position.z -=
+    center2.z;
+
+  root.position.y -=
+    box2.min.y;
+
+
+  root.traverse(
+    object => {
+
+      if (
+        object.isMesh
+      ) {
+
+        object.castShadow =
+          true;
+
+        object.receiveShadow =
+          true;
+
+      }
+
+    }
+  );
+
+  return root;
+
+}
+
+
+/* ==========================================
+   MODEL LOADERS
+========================================== */
+
+async function loadOne(
+  path
+) {
+
+  const extension =
+    path
+      .split(".")
+      .pop()
+      .toLowerCase();
+
+
+  if (
+
+    extension === "glb" ||
+
+    extension === "gltf"
+
+  ) {
+
+    const gltf =
+      await new GLTFLoader()
+        .loadAsync(
+          path
+        );
+
+    return {
+
+      root:
+        gltf.scene,
+
+      animations:
+        gltf.animations || []
+
+    };
+
+  }
+
+
+  if (
+    extension === "fbx"
+  ) {
+
+    const root =
+      await new FBXLoader()
+        .loadAsync(
+          path
+        );
+
+    return {
+
+      root,
+
+      animations:
+        root.animations || []
+
+    };
+
+  }
+
+
+  if (
+    extension === "obj"
+  ) {
+
+    const mtlPath =
+      path.replace(
+        /\.obj$/i,
+        ".mtl"
+      );
+
+    try {
+
+      const materials =
+        await new MTLLoader()
+          .loadAsync(
+            mtlPath
+          );
+
+      materials.preload();
+
+      const root =
+        await new OBJLoader()
+          .setMaterials(
+            materials
+          )
+          .loadAsync(
+            path
+          );
+
+      return {
+
+        root,
+
+        animations: []
+
+      };
+
+    } catch {
+
+      const root =
+        await new OBJLoader()
+          .loadAsync(
+            path
+          );
+
+      return {
+
+        root,
+
+        animations: []
+
+      };
+
+    }
+
+  }
+
+
+  if (
+    extension === "stl"
+  ) {
+
+    const geometry =
+      await new STLLoader()
+        .loadAsync(
+          path
+        );
+
+    geometry.computeVertexNormals();
+
+    return {
+
+      root:
+        new THREE.Mesh(
+
+          geometry,
+
+          makeMat(
+            0x9ea7ad
+          )
+
+        ),
+
+      animations: []
+
+    };
+
+  }
+
+
+  throw new Error(
+    "Unsupported model: " +
+    path
+  );
+
+}
+
+
+async function tryCandidates(
+  files
+) {
+
+  for (
+    const file of files
+  ) {
+
+    try {
+
+      return await loadOne(
+        file
+      );
+
+    } catch {
+
+    }
+
+  }
+
+  return null;
+
+}
+
+
+/* ==========================================
+   PLAYER
+========================================== */
+
+let player =
+  new THREE.Group();
+
+scene.add(
+  player
+);
+
+
+function makeFallbackPlayer() {
+
+  const group =
+    new THREE.Group();
+
+
+  const body =
+    new THREE.Mesh(
+
+      new THREE.CapsuleGeometry(
+        0.55,
+        1.3,
+        6,
+        10
+      ),
+
+      makeMat(
+        0x313a4f
+      )
+
+    );
+
+  body.position.y =
+    1.45;
+
+
+  const head =
+    new THREE.Mesh(
+
+      new THREE.SphereGeometry(
+        0.45,
+        16,
+        12
+      ),
+
+      makeMat(
+        0xd6ab88
+      )
+
+    );
+
+  head.position.y =
+    2.7;
+
+
+  group.add(
+    body,
+    head
+  );
+
+  return group;
+
+}
+
+
+async function loadPlayer() {
+
+  const loaded =
+    await tryCandidates([
+
+      "assets/player/player.glb",
+
+      "assets/player/player.gltf",
+
+      "assets/player/player.fbx"
+
+    ]);
+
+
+  if (loaded) {
+
+    const model =
+      normalizeModel(
+        loaded.root,
+        3.4
+      );
+
+    player.add(
+      model
+    );
+
+
+    if (
+      loaded.animations.length
+    ) {
+
+      const mixer =
+        new THREE.AnimationMixer(
+          loaded.root
+        );
+
+      mixer
+        .clipAction(
+          loaded.animations[0]
+        )
+        .play();
+
+      mixers.push(
+        mixer
+      );
+
+    }
+
+  } else {
+
+    player.add(
+      makeFallbackPlayer()
+    );
+
+    msg(
+      "player.glb not found — temporary player loaded."
+    );
+
+  }
+
+
+  player.position.set(
+
+    0,
+
+    terrainHeight(
+      0,
+      0
+    ),
+
+    0
+
+  );
+
+}
+
+
+/* ==========================================
+   LOAD PALS
+========================================== */
+
+async function loadPals() {
+
+  for (
+    const info of PAL_LIBRARY
+  ) {
+
+    const loaded =
+      await tryCandidates(
+        info.files
+      );
+
+
+    if (!loaded)
+      continue;
+
+
+    normalizeModel(
+      loaded.root,
+      3.2
+    );
+
+
+    palTemplates.set(
+
+      info.name,
+
+      loaded
+
+    );
+
+  }
+
+
+  if (
+    !palTemplates.size
+  ) {
+
+    msg(
+      "No Pal models found in assets/pals/."
+    );
+
+    return;
+
+  }
+
+
+  spawnWildPals();
+
+}
+
+
+/* ==========================================
+   SPAWN WILD PALS
+========================================== */
+
+function spawnWildPals() {
+
+  const names =
+    [...palTemplates.keys()];
+
+
+  const count =
+    Math.min(
+
+      40,
+
+      Math.max(
+        14,
+        names.length * 2
+      )
+
+    );
+
+
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
+
+    const name =
+      names[
+        i %
+        names.length
+      ];
+
+
+    const template =
+      palTemplates.get(
+        name
+      );
+
+
+    const root =
+      cloneSkinned(
+        template.root
+      );
+
+
+    root.userData.pal =
+      true;
+
+
+    root.userData.name =
+      name;
+
+
+    root.userData.level =
+      1 +
+      Math.floor(
+        Math.random() * 18
+      );
+
+
+    root.userData.hp =
+      100;
+
+
+    root.userData.maxHp =
+      100;
+
+
+    root.userData.wanderAngle =
+      Math.random() *
+      Math.PI *
+      2;
+
+
+    const x =
+      THREE.MathUtils.randFloatSpread(
+        720
+      );
+
+
+    const z =
+      THREE.MathUtils.randFloatSpread(
+        720
+      );
+
+
+    root.position.set(
+
+      x,
+
+      terrainHeight(
+        x,
+        z
+      ),
+
+      z
+
+    );
+
+
+    scene.add(
+      root
+    );
+
+
+    wildPals.push(
+      root
+    );
+
+
+    if (
+      template.animations.length
+    ) {
+
+      const mixer =
+        new THREE.AnimationMixer(
+          root
+        );
+
+      mixer
+        .clipAction(
+          template.animations[0]
+        )
+        .play();
+
+      mixers.push(
+        mixer
+      );
+
+    }
+
+  }
+
+}
+
+
+/* ==========================================
+   WILD PAL MOVEMENT
+========================================== */
+
+function updateWild(
+  dt
+) {
+
+  for (
+    const pal of wildPals
+  ) {
+
+    if (
+      !pal.parent
+    )
+      continue;
+
+
+    pal.userData.wanderAngle +=
+
+      THREE.MathUtils.randFloatSpread(
+        0.5
+      ) *
+
+      dt;
+
+
+    const speed =
+      0.8 +
+
+      (
+        pal.userData.level ||
+        1
+      ) *
+
+      0.02;
+
+
+    pal.position.x +=
+
+      Math.cos(
+        pal.userData.wanderAngle
+      ) *
+
+      speed *
+
+      dt;
+
+
+    pal.position.z +=
+
+      Math.sin(
+        pal.userData.wanderAngle
+      ) *
+
+      speed *
+
+      dt;
+
+
+    pal.position.y =
+      terrainHeight(
+
+        pal.position.x,
+
+        pal.position.z
+
+      );
+
+
+    pal.rotation.y =
+
+      -pal.userData.wanderAngle +
+
+      Math.PI / 2;
+
+  }
+
+}
+
+
+/* ==========================================
+   TARGET SYSTEM
+========================================== */
+
+function updateTarget() {
+
+  raycaster.setFromCamera(
+    center,
+    camera
+  );
+
+
+  const hits =
+    raycaster.intersectObjects(
+      wildPals,
+      true
+    );
+
+
+  let found =
+    null;
+
+
+  for (
+    const hit of hits
+  ) {
+
+    let object =
+      hit.object;
+
+
+    while (
+
+      object &&
+
+      !object.userData.pal
+
+    ) {
+
+      object =
+        object.parent;
+
+    }
+
+
+    if (
+
+      object?.userData.pal &&
+
+      hit.distance < 34
+
+    ) {
+
+      found =
+        object;
+
+      break;
+
+    }
+
+  }
+
+
+  currentTarget =
+    found;
+
+
+  if (
+    !targetCard
+  )
+    return;
+
+
+  targetCard.style.display =
+    found
+      ? "block"
+      : "none";
+
+
+  if (!found)
+    return;
+
+
+  const hpPercent =
+
+    Math.max(
+      0,
+      found.userData.hp
+    ) /
+
+    found.userData.maxHp *
+
+    100;
+
+
+  const chance =
+    captureProbability(
+      found
+    );
+
+
+  targetName.textContent =
+    found.userData.name;
+
+
+  targetMeta.textContent =
+
+    `Lv. ${found.userData.level}`;
+
+
+  captureChance.textContent =
+
+    `${Math.round(
+      chance * 100
+    )}% capture`;
+
+
+  targetHpBar.style.width =
+
+    `${hpPercent}%`;
+
+}
+
+
+/* ==========================================
+   CAPTURE CHANCE
+========================================== */
+
+function captureProbability(
+  pal
+) {
+
+  const hpFactor =
+
+    1 -
+
+    pal.userData.hp /
+
+    pal.userData.maxHp;
+
+
+  return THREE.MathUtils.clamp(
+
+    SPHERES[
+      selectedSphere
+    ].power *
+
+    (
+      0.65 +
+      hpFactor *
+      0.85
+    ),
+
+    0.08,
+
+    0.98
+
+  );
+
+}
+
+
+/* ==========================================
+   ATTACK
+========================================== */
+
+function attackTarget() {
+
+  if (
+    !currentTarget
+  )
+    return;
+
+
+  currentTarget.userData.hp -=
+
+    12 +
+
+    playerState.level *
+    1.5;
+
+
+  if (
+
+    currentTarget.userData.hp <=
+    0
+
+  ) {
+
+    msg(
+
+      `${currentTarget.userData.name} was defeated.`
+
+    );
+
+
+    scene.remove(
+      currentTarget
+    );
+
+
+    const index =
+      wildPals.indexOf(
+        currentTarget
+      );
+
+
+    if (
+      index >= 0
+    ) {
+
+      wildPals.splice(
+        index,
+        1
+      );
+
+    }
+
+
+    currentTarget =
+      null;
+
+  }
+
+}
+
+
+/* ==========================================
+   SPHERES
+========================================== */
+
+function createSphereVisual(
+  index
+) {
+
+  const colors = [
+
+    0x4da6ff,
+
+    0x52d47b,
+
+    0xe2bd43,
+
+    0xff6d35,
+
+    0xffb02e
+
+  ];
+
+
+  const sphere =
+    new THREE.Mesh(
+
+      new THREE.SphereGeometry(
+        0.32,
+        18,
+        12
+      ),
+
+      makeMat(
+        colors[index] ||
+        0xffffff,
+        0.45
+      )
+
+    );
+
+
+  sphere.castShadow =
+    true;
+
+
+  return sphere;
+
+}
+
+
+/* ==========================================
+   THROW SPHERE
+========================================== */
+
+function throwSphere() {
+
+  if (
+    !currentTarget
+  ) {
+
+    msg(
+      "Aim at a Pal before throwing a Sphere."
+    );
+
+    return;
+
+  }
+
+
+  const sphere =
+    createSphereVisual(
+      selectedSphere
+    );
+
+
+  const direction =
+    new THREE.Vector3();
+
+
+  camera.getWorldDirection(
+    direction
+  );
+
+
+  sphere.position
+    .copy(
+      camera.position
+    )
+    .add(
+
+      direction
+        .clone()
+        .multiplyScalar(
+          1.4
+        )
+
+    );
+
+
+  scene.add(
+    sphere
+  );
+
+
+  sphereProjectiles.push({
+
+    mesh:
+      sphere,
+
+    velocity:
+      direction
+        .multiplyScalar(
+
+          18 +
+          qCharge * 15
+
+        )
+        .add(
+
+          new THREE.Vector3(
+
+            0,
+
+            3 +
+            qCharge * 4,
+
+            0
+
+          )
+
+        ),
+
+    target:
+      currentTarget,
+
+    life:
+      3
+
+  });
+
+
+  qCharge =
+    0;
+
+}
+
+
+/* ==========================================
+   UPDATE SPHERES
+========================================== */
+
+function updateSpheres(
+  dt
+) {
+
+  for (
+
+    let i =
+      sphereProjectiles.length - 1;
+
+    i >= 0;
+
+    i--
+
+  ) {
+
+    const projectile =
+      sphereProjectiles[i];
+
+
+    projectile.velocity.y -=
+      9.8 *
+      dt;
+
+
+    projectile.mesh.position
+      .addScaledVector(
+
+        projectile.velocity,
+
+        dt
+
+      );
+
+
+    projectile.mesh.rotation.x +=
+      dt * 8;
+
+
+    projectile.life -=
+      dt;
+
+
+    if (
+
+      projectile.target?.parent &&
+
+      projectile.mesh.position
+        .distanceTo(
+
+          projectile.target.position
+            .clone()
+            .add(
+
+              new THREE.Vector3(
+                0,
+                1.5,
+                0
+              )
+
+            )
+
+        ) < 2.4
+
+    ) {
+
+      const chance =
+        captureProbability(
+          projectile.target
+        );
+
+
+      const success =
+        Math.random() <
+        chance;
+
+
+      if (success) {
+
+        capturePal(
+          projectile.target
+        );
+
+      } else {
+
+        msg(
+
+          `${projectile.target.userData.name} escaped the Sphere!`
+
+        );
+
+      }
+
+
+      scene.remove(
+        projectile.mesh
+      );
+
+
+      sphereProjectiles.splice(
+        i,
+        1
+      );
+
+
+      continue;
+
+    }
+
+
+    if (
+      projectile.life <= 0
+    ) {
+
+      scene.remove(
+        projectile.mesh
+      );
+
+
+      sphereProjectiles.splice(
+        i,
+        1
+      );
+
+    }
+
+  }
+
+}
+
+
+/* ==========================================
+   CAPTURE PAL
+========================================== */
+
+function capturePal(
+  pal
+) {
+
+  const data = {
+
+    name:
+      pal.userData.name,
+
+    level:
+      pal.userData.level
+
+  };
+
+
+  if (
+    playerState.party.length < 5
+  ) {
+
+    playerState.party.push(
+      data
+    );
+
+  } else {
+
+    playerState.box.push(
+      data
+    );
+
+  }
+
+
+  msg(
+    `${data.name} captured!`
+  );
+
+
+  scene.remove(
+    pal
+  );
+
+
+  const index =
+    wildPals.indexOf(
+      pal
+    );
+
+
+  if (
+    index >= 0
+  ) {
+
+    wildPals.splice(
+      index,
+      1
+    );
+
+  }
+
+
+  persist();
+
+  renderParty();
+
+}
+
+
+/* ==========================================
+   SUMMON PAL
+========================================== */
+
+function summonFirstPal() {
+
+  if (
+    playerState.summon
+  ) {
+
+    scene.remove(
+      playerState.summon
+    );
+
+    playerState.summon =
+      null;
+
+    return;
+
+  }
+
+
+  const first =
+    playerState.party[0];
+
+
+  if (!first) {
+
+    msg(
+      "Capture a Pal first."
+    );
+
+    return;
+
+  }
+
+
+  const template =
+    palTemplates.get(
+      first.name
+    );
+
+
+  if (!template)
+    return;
+
+
+  const pal =
+    cloneSkinned(
+      template.root
+    );
+
+
+  pal.position
+    .copy(
+      player.position
+    )
+    .add(
+
+      new THREE.Vector3(
+        3,
+        0,
+        3
+      )
+
+    );
+
+
+  pal.position.y =
+    terrainHeight(
+
+      pal.position.x,
+
+      pal.position.z
+
+    );
+
+
+  scene.add(
+    pal
+  );
+
+
+  playerState.summon =
+    pal;
+
+
+  msg(
+    `${first.name} summoned.`
+  );
+
+}
+
+
+/* ==========================================
+   MOUNT
+========================================== */
+
+function toggleMount() {
+
+  if (
+    !playerState.summon
+  ) {
+
+    msg(
+      "Summon a Pal with F first."
+    );
+
+    return;
+
+  }
+
+
+  playerState.mounted =
+    !playerState.mounted;
+
+
+  msg(
+
+    playerState.mounted
+      ? "Mounted."
+      : "Dismounted."
+
+  );
+
+}
+
+
+/* ==========================================
+   PLAYER MOVEMENT
+========================================== */
+
+function movePlayer(
+  dt
+) {
+
+  const forward =
+    new THREE.Vector3(
+
+      Math.sin(
+        cameraYaw
+      ),
+
+      0,
+
+      Math.cos(
+        cameraYaw
+      )
+
+    );
+
+
+  const right =
+    new THREE.Vector3(
+
+      forward.z,
+
+      0,
+
+      -forward.x
+
+    );
+
+
+  const move =
+    new THREE.Vector3();
+
+
+  if (
+    keys.has("KeyW")
+  )
+    move.add(forward);
+
+
+  if (
+    keys.has("KeyS")
+  )
+    move.sub(forward);
+
+
+  if (
+    keys.has("KeyD")
+  )
+    move.add(right);
+
+
+  if (
+    keys.has("KeyA")
+  )
+    move.sub(right);
+
+
+  const sprinting =
+
+    keys.has(
+      "ShiftLeft"
+    ) &&
+
+    playerState.stamina >
+      0;
+
+
+  const speed =
+
+    playerState.mounted
+      ? 16
+
+      : sprinting
+        ? 12
+        : 7;
+
+
+  if (
+    move.lengthSq()
+  ) {
+
+    move.normalize();
+
+
+    player.position
+      .addScaledVector(
+
+        move,
+
+        speed *
+        dt
+
+      );
+
+
+    player.rotation.y =
+
+      Math.atan2(
+
+        move.x,
+
+        move.z
+
+      );
+
+
+    if (
+      sprinting
+    ) {
+
+      playerState.stamina =
+
+        Math.max(
+
+          0,
+
+          playerState.stamina -
+          24 * dt
+
+        );
+
+    }
+
+  } else {
+
+    playerState.stamina =
+
+      Math.min(
+
+        100,
+
+        playerState.stamina +
+        17 * dt
+
+      );
+
+  }
+
+
+  if (
+
+    playerState.mounted &&
+
+    keys.has("Space")
+
+  ) {
+
+    player.position.y +=
+      8 *
+      dt;
+
+  }
+
+
+  else if (
+
+    playerState.mounted &&
+
+    keys.has(
+      "ControlLeft"
+    )
+
+  ) {
+
+    player.position.y -=
+      8 *
+      dt;
+
+  }
+
+
+  else {
+
+    player.position.y =
+
+      terrainHeight(
+
+        player.position.x,
+
+        player.position.z
+
+      );
+
+  }
+
+
+  player.position.x =
+
+    THREE.MathUtils.clamp(
+
+      player.position.x,
+
+      -430,
+
+      430
+
+    );
+
+
+  player.position.z =
+
+    THREE.MathUtils.clamp(
+
+      player.position.z,
+
+      -430,
+
+      430
+
+    );
+
+
+  if (
+    playerState.summon
+  ) {
+
+    const target =
+
+      player.position
+        .clone()
+
+        .add(
+
+          right
+            .clone()
+            .multiplyScalar(
+              3
+            )
+
+        )
+
+        .add(
+
+          forward
+            .clone()
+            .multiplyScalar(
+              -3
+            )
+
+        );
+
+
+    playerState.summon.position
+      .lerp(
+
+        target,
+
+        1 -
+        Math.exp(
+          -4 * dt
+        )
+
+      );
+
+
+    playerState.summon.position.y =
+
+      Math.max(
+
+        playerState.summon.position.y,
+
+        terrainHeight(
+
+          playerState.summon.position.x,
+
+          playerState.summon.position.z
+
+        )
+
+      );
+
+  }
+
+}
+
+
+/* ==========================================
+   CAMERA
+========================================== */
+
+function updateCamera() {
+
+  const distance =
+    8.5;
+
+
+  const height =
+    4.3;
+
+
+  const focus =
+
+    player.position
+      .clone()
+      .add(
+
+        new THREE.Vector3(
+          0,
+          2.2,
+          0
+        )
+
+      );
+
+
+  const offset =
+    new THREE.Vector3(
+
+      -Math.sin(
+        cameraYaw
+      ) *
+
+      Math.cos(
+        cameraPitch
+      ) *
+
+      distance,
+
+
+      height +
+
+      Math.sin(
+        -cameraPitch
+      ) *
+
+      distance,
+
+
+      -Math.cos(
+        cameraYaw
+      ) *
+
+      Math.cos(
+        cameraPitch
+      ) *
+
+      distance
+
+    );
+
+
+  camera.position.lerp(
+
+    focus
+      .clone()
+      .add(
+        offset
+      ),
+
+    0.16
+
+  );
+
+
+  camera.lookAt(
+    focus
+  );
+
+}
+
+
+/* ==========================================
+   DAY AND NIGHT
+========================================== */
+
+function updateDayNight(
+  dt
+) {
+
+  dayTime =
+
+    (
+      dayTime +
+      dt * 0.18
+    ) %
+
+    24;
+
+
+  const phase =
+
+    dayTime /
+    24 *
+
+    Math.PI *
+    2;
+
+
+  const daylight =
+
+    THREE.MathUtils.clamp(
+
+      Math.sin(
+
+        phase -
+        Math.PI / 2
+
+      ) *
+
+      0.65 +
+
+      0.5,
+
+      0.12,
+
+      1
+
+    );
+
+
+  sun.intensity =
+
+    0.5 +
+
+    daylight *
+    2.2;
+
+
+  sun.position.set(
+
+    Math.cos(
+      phase
+    ) * 180,
+
+    Math.sin(
+      phase
+    ) * 180,
+
+    80
+
+  );
+
+
+  const sky =
+    new THREE.Color()
+      .lerpColors(
+
+        new THREE.Color(
+          0x10213d
+        ),
+
+        new THREE.Color(
+          0x86bde8
+        ),
+
+        daylight
+
+      );
+
+
+  scene.background.copy(
+    sky
+  );
+
+
+  if (
+    clockText
+  ) {
+
+    clockText.textContent =
+
+      `${String(
+        Math.floor(
+          dayTime
+        )
+      ).padStart(
+        2,
+        "0"
+      )}:${String(
+        Math.floor(
+          (dayTime % 1) *
+          60
+        )
+      ).padStart(
+        2,
+        "0"
+      )}`;
+
+  }
+
+}
+
+
+/* ==========================================
+   ZONE NAME
+========================================== */
+
+function zoneForPlayer() {
+
+  const biome =
+    biomeAt(
+
+      player.position.x,
+
+      player.position.z
+
+    );
+
+
+  return ({
+
+    grassland:
+      "Emerald Plains",
+
+    desert:
+      "Sunscar Desert",
+
+    snow:
+      "Frost Crown",
+
+    volcanic:
+      "Ashen Reach",
+
+    coast:
+      "Azure Coast"
+
+  })[biome];
+
+}
+
+
+/* ==========================================
+   PARTY HUD
+========================================== */
+
+function renderParty() {
+
+  if (
+    !partyHud
+  )
+    return;
+
+
+  partyHud.textContent =
+
+    playerState.party.length
+
+      ? playerState.party
+          .map(
+
+            (pal, index) =>
+
+              `${index + 1}. ${pal.name} Lv.${pal.level}`
+
+          )
+          .join(
+            "  •  "
+          )
+
+      : "Party empty";
+
+}
+
+
+/* ==========================================
+   HUD
+========================================== */
+
+function updateHud() {
+
+  playerState.food =
+
+    Math.max(
+
+      0,
+
+      playerState.food -
+      0.16 / 60
+
+    );
+
+
+  if (
+    hpBar
+  )
+    hpBar.style.width =
+      `${playerState.hp}%`;
+
+
+  if (
+    hpText
+  )
+    hpText.textContent =
+      `${Math.round(
+        playerState.hp
+      )}/100`;
+
+
+  if (
+    staminaBar
+  )
+    staminaBar.style.width =
+      `${playerState.stamina}%`;
+
+
+  if (
+    staminaText
+  )
+    staminaText.textContent =
+      `${Math.round(
+        playerState.stamina
+      )}/100`;
+
+
+  if (
+    foodBar
+  )
+    foodBar.style.width =
+      `${playerState.food}%`;
+
+
+  if (
+    foodText
+  )
+    foodText.textContent =
+      `${Math.round(
+        playerState.food
+      )}/100`;
+
+
+  if (
+    levelText
+  )
+    levelText.textContent =
+      `Lv. ${playerState.level}`;
+
+
+  if (
+    zoneName
+  )
+    zoneName.textContent =
+      zoneForPlayer();
+
+
+  if (
+    sphereHud
+  ) {
+
+    sphereHud.textContent =
+
+      `${selectedSphere + 1} • ${SPHERES[selectedSphere].name}` +
+
+      (
+        qHeld
+
+          ? ` • Charge ${Math.round(
+              qCharge * 100
+            )}%`
+
+          : ""
+      );
+
+  }
+
+}
+
+
+/* ==========================================
+   INPUT
+========================================== */
+
+function bindInput() {
+
+  addEventListener(
+
+    "keydown",
+
+    event => {
+
+      keys.add(
+        event.code
+      );
+
+
+      if (
+        event.code.startsWith(
+          "Digit"
+        )
+      ) {
+
+        const number =
+          Number(
+            event.code.slice(
+              5
+            )
+          );
+
+
+        if (
+
+          number >= 1 &&
+
+          number <=
+          SPHERES.length
+
+        ) {
+
+          selectedSphere =
+            number - 1;
+
+        }
+
+      }
+
+
+      if (
+
+        event.code === "KeyQ" &&
+
+        !event.repeat
+
+      ) {
+
+        qHeld = true;
+
+        qCharge = 0;
+
+      }
+
+
+      if (
+
+        event.code === "KeyF" &&
+
+        !event.repeat
+
+      ) {
+
+        summonFirstPal();
+
+      }
+
+
+      if (
+
+        event.code === "KeyE" &&
+
+        !event.repeat
+
+      ) {
+
+        toggleMount();
+
+      }
+
+
+      if (
+        event.code === "Escape"
+      ) {
+
+        toggleMenu();
+
+      }
+
+    }
+
+  );
+
+
+  addEventListener(
+
+    "keyup",
+
+    event => {
+
+      keys.delete(
+        event.code
+      );
+
+
+      if (
+        event.code === "KeyQ"
+      ) {
+
+        qHeld = false;
+
+        throwSphere();
+
+      }
+
+    }
+
+  );
+
+
+  canvas.addEventListener(
+
+    "mousedown",
+
+    event => {
+
+      if (
+
+        event.button === 0 &&
+
+        !qHeld
+
+      ) {
+
+        attackTarget();
+
+      }
+
+
+      if (
+
+        document.pointerLockElement !==
+        canvas
+
+      ) {
+
+        canvas.requestPointerLock();
+
+      }
+
+    }
+
+  );
+
+
+  addEventListener(
+
+    "mousemove",
+
+    event => {
+
+      if (
+
+        document.pointerLockElement !==
+        canvas
+
+      )
+        return;
+
+
+      cameraYaw -=
+
+        event.movementX *
+        0.0022;
+
+
+      cameraPitch =
+
+        THREE.MathUtils.clamp(
+
+          cameraPitch -
+
+          event.movementY *
+          0.0018,
+
+          -0.72,
+
+          0.48
+
+        );
+
+    }
+
+  );
+
+}
+
+
+/* ==========================================
+   MENU
+========================================== */
+
+function toggleMenu(
+  force
+) {
+
+  paused =
+
+    typeof force === "boolean"
+
+      ? force
+
+      : !paused;
+
+
+  if (
+    menuPanel
+  ) {
+
+    menuPanel.style.display =
+
+      paused
+        ? "flex"
+        : "none";
+
+  }
+
+
+  if (
+
+    paused &&
+
+    document.pointerLockElement
+
+  ) {
+
+    document.exitPointerLock();
+
+  }
+
+}
+
+
+menuButton?.addEventListener(
+
+  "click",
+
+  () =>
+    toggleMenu()
+
+);
+
+
+resumeButton?.addEventListener(
+
+  "click",
+
+  () =>
+    toggleMenu(
+      false
+    )
+
+);
+
+
+resetButton?.addEventListener(
+
+  "click",
+
+  () => {
+
+    localStorage.removeItem(
+      SAVE_KEY
+    );
+
+    location.reload();
+
+  }
+
+);
+
+
+backButton?.addEventListener(
+
+  "click",
+
+  () =>
+    history.back()
+
+);
+
+
+/* ==========================================
+   RESIZE
+========================================== */
+
+addEventListener(
+
+  "resize",
+
+  () => {
+
+    camera.aspect =
+
+      innerWidth /
+      innerHeight;
+
+
+    camera.updateProjectionMatrix();
+
+
+    renderer.setSize(
+
+      innerWidth,
+
+      innerHeight
+
+    );
+
+  }
+
+);
+
+
+/* ==========================================
+   INITIALIZE GAME
+========================================== */
+
+async function init() {
+
+  if (
+    loading
+  ) {
+
+    loading.textContent =
+      "Building GALAXY PALS world…";
+
+  }
+
+
+  createTerrain();
+
+  createWater();
+
+  createWorldProps();
+
+  createSkyDecor();
+
+
+  await loadPlayer();
+
+
+  if (
+    loading
+  ) {
+
+    loading.textContent =
+      "Loading Pals…";
+
+  }
+
+
+  await loadPals();
+
+
+  renderParty();
+
+  bindInput();
+
+
+  if (
+    loading
+  ) {
+
+    loading.style.display =
+      "none";
+
+  }
+
+
+  msg(
+    "GALAXY PALS world ready."
+  );
+
+
+  setInterval(
+    persist,
+    5000
+  );
+
+
+  animate();
+
+}
+
+
+/* ==========================================
+   GAME LOOP
+========================================== */
+
+function animate() {
+
+  requestAnimationFrame(
+    animate
+  );
+
+
+  const dt =
+
+    Math.min(
+
+      clock.getDelta(),
+
+      0.05
+
+    );
+
+
+  if (
+    !paused
+  ) {
+
+    if (
+      qHeld
+    ) {
+
+      qCharge =
+
+        Math.min(
+
+          1,
+
+          qCharge +
+          dt / 1.2
+
+        );
+
+    }
+
+
+    movePlayer(
+      dt
+    );
+
+
+    updateWild(
+      dt
+    );
+
+
+    updateSpheres(
+      dt
+    );
+
+
+    updateCamera();
+
+
+    updateTarget();
+
+
+    updateDayNight(
+      dt
+    );
+
+
+    updateHud();
+
+
+    for (
+      const mixer of mixers
+    ) {
+
+      mixer.update(
+        dt
+      );
+
+    }
+
+  }
+
+
+  renderer.render(
+
+    scene,
+
+    camera
+
+  );
+
+}
+
+
+/* ==========================================
+   START
+========================================== */
+
+init()
+  .catch(
+
+    error => {
+
+      console.error(
+        error
+      );
+
+
+      if (
+        loading
+      ) {
+
+        loading.textContent =
+          "Game failed to load. Open browser console for details.";
+
+      }
+
+    }
+
+  );
