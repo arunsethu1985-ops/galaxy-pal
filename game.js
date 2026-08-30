@@ -2433,10 +2433,6 @@ async function loadPals() {
 
       definition.height
 
-normalizeModel(
-  asset.scene,
-  definition.height
-);
 
     return null;
 
