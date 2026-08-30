@@ -2433,14 +2433,10 @@ async function loadPals() {
 
       definition.height
 
-function createSphere(tier) {
-
-  const definition =
-    SPHERES[tier] ||
-    SPHERES[0];
-   return group;
-
-} 
+normalizeModel(
+  asset.scene,
+  definition.height
+);
 
     return null;
 
