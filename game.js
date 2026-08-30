@@ -2432,7 +2432,7 @@ async function loadPals() {
       asset.scene,
 
       definition.height
-
+);
 
     return null;
 
