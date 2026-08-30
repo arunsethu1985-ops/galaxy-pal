@@ -1,1 +1,68 @@
+/* =========================================================
+   CAPTURE SPHERES
+   ALL CREATED WITH CODE
+========================================================= */
 
+const SPHERES = [
+
+  {
+    name: "Basic Sphere",
+    bonus: 1.00,
+
+    mainColor: 0x3388ff,
+    secondColor: 0xffffff,
+    glowColor: 0x45aaff,
+
+    metalness: 0.30,
+    glow: 0.18
+  },
+
+  {
+    name: "Mega Sphere",
+    bonus: 1.35,
+
+    mainColor: 0x35d46f,
+    secondColor: 0x102719,
+    glowColor: 0x58ff91,
+
+    metalness: 0.42,
+    glow: 0.24
+  },
+
+  {
+    name: "Giga Sphere",
+    bonus: 1.75,
+
+    mainColor: 0xe6bd31,
+    secondColor: 0x503700,
+    glowColor: 0xffdc55,
+
+    metalness: 0.52,
+    glow: 0.32
+  },
+
+  {
+    name: "Hyper Sphere",
+    bonus: 2.20,
+
+    mainColor: 0x905cff,
+    secondColor: 0x291050,
+    glowColor: 0xc59aff,
+
+    metalness: 0.60,
+    glow: 0.42
+  },
+
+  {
+    name: "Ultra Sphere",
+    bonus: 2.80,
+
+    mainColor: 0xff8a26,
+    secondColor: 0x401708,
+    glowColor: 0xffba57,
+
+    metalness: 0.72,
+    glow: 0.55
+  }
+
+];
