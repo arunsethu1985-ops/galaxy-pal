@@ -2433,105 +2433,14 @@ async function loadPals() {
 
       definition.height
 
-    );
+function createSphere(tier) {
 
+  const definition =
+    SPHERES[tier] ||
+    SPHERES[0];
+   return group;
 
-    state.cache.set(
-
-      definition.id,
-
-      {
-
-        ...asset,
-
-        source:
-          asset.scene
-
-      }
-
-    );
-
-
-    loaded++;
-
-
-    console.log(
-
-      `Loaded ${definition.name} from ${asset.file}`
-
-    );
-
-  }
-
-
-  return loaded;
-
-}
-
-
-/* =========================================================
-   CLONE PAL
-========================================================= */
-
-function cloneAsset(
-  cached
-) {
-
-
-  if (
-
-    cached.type ===
-    "glb" ||
-
-    cached.type ===
-    "gltf" ||
-
-    cached.type ===
-    "fbx"
-
-  ) {
-
-
-    return cloneSkinned(
-      cached.source
-    );
-
-  }
-
-
-  return cached.source.clone(
-    true
-  );
-
-}
-
-
-/* =========================================================
-   SPAWN PAL
-========================================================= */
-
-function spawnCreature(
-
-  definition,
-
-  x,
-
-  z,
-
-  level = 1
-
-) {
-
-
-  const cached =
-    state.cache.get(
-      definition.id
-    );
-
-
-  if (
-    !cached
-  ) {
+} 
 
     return null;
 
