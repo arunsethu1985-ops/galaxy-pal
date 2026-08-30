@@ -5264,3 +5264,6 @@ function loop(
 requestAnimationFrame(
   loop
 );
+function openGalaxyPals() {
+  window.location.href = "https://galaxy-csxwhhb4q-harshavardhan5.vercel.app";
+}
