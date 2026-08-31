@@ -25,17 +25,17 @@ import {
 } from "https://esm.sh/three@0.160.0/examples/jsm/utils/SkeletonUtils.js";
 
 
-const $ = (s, r = document) =>
-  r.querySelector(s);
+const $ = (selector, root = document) =>
+  root.querySelector(selector);
 
-const clamp = (n, a, b) =>
-  Math.max(a, Math.min(b, n));
+const clamp = (number, min, max) =>
+  Math.max(min, Math.min(max, number));
 
-const rand = (a, b) =>
-  a + Math.random() * (b - a);
+const rand = (min, max) =>
+  min + Math.random() * (max - min);
 
-const pick = a =>
-  a[Math.floor(Math.random() * a.length)];
+const pick = array =>
+  array[Math.floor(Math.random() * array.length)];
 
 
 const SAVE_KEY =
@@ -43,7 +43,7 @@ const SAVE_KEY =
 
 
 /* =========================================================
-   PAL FILES
+   PAL LIBRARY
 ========================================================= */
 
 const PAL_LIBRARY = [
@@ -52,10 +52,12 @@ const PAL_LIBRARY = [
     id: "anubis",
     name: "Anubis",
     element: "Ground",
+
     files: [
       "assets/pals/anubis.glb",
       "assets/pals/anubis.fbx"
     ],
+
     height: 2.4,
     hp: 230,
     speed: 4.5,
@@ -67,10 +69,12 @@ const PAL_LIBRARY = [
     id: "astegon",
     name: "Astegon",
     element: "Dragon",
+
     files: [
       "assets/pals/astegon.glb",
       "assets/pals/astegon.obj"
     ],
+
     height: 3.2,
     hp: 320,
     speed: 3.5,
@@ -82,9 +86,11 @@ const PAL_LIBRARY = [
     id: "chikipi",
     name: "Chikipi",
     element: "Neutral",
+
     files: [
       "assets/pals/chikipi.glb"
     ],
+
     height: 1.05,
     hp: 80,
     speed: 3,
@@ -95,10 +101,12 @@ const PAL_LIBRARY = [
     id: "chillet",
     name: "Chillet",
     element: "Ice",
+
     files: [
       "assets/pals/chillet.glb",
       "assets/pals/chillet.fbx"
     ],
+
     height: 2.2,
     hp: 170,
     speed: 4.6,
@@ -110,11 +118,12 @@ const PAL_LIBRARY = [
     id: "direhowl",
     name: "Direhowl",
     element: "Neutral",
+
     files: [
       "assets/pals/direhowl.glb",
-      "assets/pals/direhowl.fbx",
-      "assets/pals/dire wolf.fbx"
+      "assets/pals/direhowl.fbx"
     ],
+
     height: 1.55,
     hp: 145,
     speed: 5.4,
@@ -126,9 +135,11 @@ const PAL_LIBRARY = [
     id: "dupin",
     name: "Dupin",
     element: "Neutral",
+
     files: [
       "assets/pals/dupin.glb"
     ],
+
     height: 1.7,
     hp: 135,
     speed: 4,
@@ -139,10 +150,12 @@ const PAL_LIBRARY = [
     id: "fenglope",
     name: "Fenglope",
     element: "Neutral",
+
     files: [
       "assets/pals/fenglope.glb",
       "assets/pals/fenglope.fbx"
     ],
+
     height: 2,
     hp: 180,
     speed: 5.8,
@@ -154,10 +167,12 @@ const PAL_LIBRARY = [
     id: "foxparks",
     name: "Foxparks",
     element: "Fire",
+
     files: [
       "assets/pals/foxparks.glb",
       "assets/pals/foxparks.fbx"
     ],
+
     height: 1.25,
     hp: 110,
     speed: 4.4,
@@ -168,10 +183,12 @@ const PAL_LIBRARY = [
     id: "grizzbolt",
     name: "Grizzbolt",
     element: "Electric",
+
     files: [
       "assets/pals/grizzbolt.glb",
       "assets/pals/grizzbolt.fbx"
     ],
+
     height: 2.8,
     hp: 310,
     speed: 3.7,
@@ -183,12 +200,13 @@ const PAL_LIBRARY = [
     id: "jetragon",
     name: "Jetragon",
     element: "Dragon",
+
     files: [
       "assets/pals/jetragon.glb",
       "assets/pals/jetragon.fbx",
-      "assets/pals/jetragon.stl",
-      "assets/pals/jet dragon.stl"
+      "assets/pals/jetragon.stl"
     ],
+
     height: 3.2,
     hp: 650,
     speed: 6.4,
@@ -201,10 +219,12 @@ const PAL_LIBRARY = [
     id: "katress",
     name: "Katress",
     element: "Dark",
+
     files: [
       "assets/pals/katress.glb",
       "assets/pals/katress.fbx"
     ],
+
     height: 1.8,
     hp: 165,
     speed: 4.2,
@@ -215,11 +235,13 @@ const PAL_LIBRARY = [
     id: "kitsun",
     name: "Kitsun",
     element: "Fire",
+
     files: [
       "assets/pals/kitsun.glb",
       "assets/pals/kitsun.fbx",
       "assets/pals/kitsun.stl"
     ],
+
     height: 1.45,
     hp: 155,
     speed: 5.1,
@@ -231,12 +253,14 @@ const PAL_LIBRARY = [
     id: "leezpunk",
     name: "Leezpunk",
     element: "Dark",
+
     files: [
       "assets/pals/leezpunk.glb",
       "assets/pals/leezpunk.fbx"
     ],
-    height: 1.65,
-    hp: 145,
+
+    height: 1.55,
+    hp: 140,
     speed: 4.1,
     rarity: 2
   },
@@ -244,15 +268,16 @@ const PAL_LIBRARY = [
   {
     id: "lily-everhart",
     name: "Lily Everhart",
-    element: "Neutral",
+    element: "Grass",
+
     files: [
       "assets/pals/lily-everhart.glb",
-      "assets/pals/lily-everhart.fbx",
-      "assets/pals/lily ever heart.fbx"
+      "assets/pals/lily-everhart.fbx"
     ],
-    height: 1.75,
-    hp: 170,
-    speed: 4.2,
+
+    height: 1.85,
+    hp: 230,
+    speed: 4,
     rarity: 4
   },
 
@@ -260,13 +285,15 @@ const PAL_LIBRARY = [
     id: "lovander",
     name: "Lovander",
     element: "Neutral",
+
     files: [
       "assets/pals/lovander.glb",
       "assets/pals/lovander.fbx"
     ],
-    height: 1.9,
-    hp: 160,
-    speed: 4,
+
+    height: 2,
+    hp: 175,
+    speed: 4.2,
     rarity: 3
   },
 
@@ -274,13 +301,15 @@ const PAL_LIBRARY = [
     id: "lunaris",
     name: "Lunaris",
     element: "Neutral",
+
     files: [
       "assets/pals/lunaris.glb",
       "assets/pals/lunaris.fbx"
     ],
-    height: 1.45,
-    hp: 155,
-    speed: 4.3,
+
+    height: 1.65,
+    hp: 150,
+    speed: 4.4,
     rarity: 3
   },
 
@@ -288,28 +317,32 @@ const PAL_LIBRARY = [
     id: "mammorest",
     name: "Mammorest",
     element: "Grass",
+
     files: [
-      "assets/pals/mammorest.glb"
+      "assets/pals/mammorest.glb",
+      "assets/pals/mammorest.fbx"
     ],
-    height: 3.7,
-    hp: 420,
-    speed: 2.9,
-    rarity: 5,
-    mount: "ground",
-    boss: true
+
+    height: 3.6,
+    hp: 480,
+    speed: 2.8,
+    rarity: 4,
+    mount: "ground"
   },
 
   {
     id: "mau",
     name: "Mau",
     element: "Dark",
+
     files: [
       "assets/pals/mau.glb",
       "assets/pals/mau.obj"
     ],
-    height: 1.15,
-    hp: 100,
-    speed: 4.5,
+
+    height: 1.1,
+    hp: 95,
+    speed: 4,
     rarity: 2
   },
 
@@ -317,10 +350,12 @@ const PAL_LIBRARY = [
     id: "mossanda",
     name: "Mossanda",
     element: "Grass",
+
     files: [
       "assets/pals/mossanda.glb",
       "assets/pals/mossanda.fbx"
     ],
+
     height: 2.6,
     hp: 280,
     speed: 3.3,
@@ -332,7 +367,7 @@ const PAL_LIBRARY = [
 
 
 /* =========================================================
-   CAPTURE SPHERES
+   SPHERES
 ========================================================= */
 
 const SPHERES = [
@@ -409,7 +444,9 @@ function loadSave() {
   try {
 
     return {
+
       ...DEFAULT_SAVE,
+
       ...(
         JSON.parse(
           localStorage.getItem(
@@ -417,6 +454,7 @@ function loadSave() {
           )
         ) || {}
       )
+
     };
 
   } catch {
@@ -437,9 +475,7 @@ const state = {
   keys: new Set(),
 
   creatures: [],
-
   mixers: [],
-
   cache: new Map(),
 
   target: null,
@@ -493,7 +529,7 @@ if (
 
 
 /* =========================================================
-   THREE.JS WORLD
+   THREE WORLD
 ========================================================= */
 
 const scene =
@@ -524,8 +560,11 @@ const camera =
 
 const renderer =
   new THREE.WebGLRenderer({
+
     canvas,
+
     antialias: true
+
   });
 
 
@@ -549,7 +588,9 @@ renderer.toneMappingExposure =
   1.05;
 
 
-/* LIGHT */
+/* =========================================================
+   LIGHTING
+========================================================= */
 
 const hemi =
   new THREE.HemisphereLight(
@@ -557,6 +598,7 @@ const hemi =
     0x405537,
     1.5
   );
+
 
 scene.add(
   hemi
@@ -608,6 +650,7 @@ scene.add(
 const world =
   new THREE.Group();
 
+
 scene.add(
   world
 );
@@ -634,16 +677,20 @@ const stlLoader =
 
 
 /* =========================================================
-   UTILITY
+   BASIC UTILITIES
 ========================================================= */
 
 function msg(text) {
 
   state.feed.unshift({
+
     text,
+
     time:
       performance.now()
+
   });
+
 
   state.feed =
     state.feed.slice(
@@ -659,12 +706,18 @@ function saveGame() {
   if (
     !state.player
   ) {
+
     return;
+
   }
 
+
   Object.assign(
+
     state.save,
+
     {
+
       x:
         state.player.x,
 
@@ -682,14 +735,20 @@ function saveGame() {
 
       hunger:
         state.player.hunger
+
     }
+
   );
 
+
   localStorage.setItem(
+
     SAVE_KEY,
+
     JSON.stringify(
       state.save
     )
+
   );
 
 }
@@ -701,15 +760,37 @@ function saveGame() {
 
 function resize() {
 
+  const width =
+    window.innerWidth;
+
+  const height =
+    window.innerHeight;
+
+
+  renderer.setPixelRatio(
+
+    Math.min(
+      window.devicePixelRatio || 1,
+      1.6
+    )
+
+  );
+
+
   renderer.setSize(
-    host.clientWidth,
-    host.clientHeight,
+    width,
+    height,
     false
   );
 
+
   camera.aspect =
-    host.clientWidth /
-    host.clientHeight;
+    width /
+    Math.max(
+      1,
+      height
+    );
+
 
   camera.updateProjectionMatrix();
 
@@ -733,225 +814,347 @@ function makeWorld() {
 
   const ground =
     new THREE.Mesh(
-      new THREE.PlaneGeometry(
-        360,
-        360
+
+      new THREE.CircleGeometry(
+        220,
+        80
       ),
+
       new THREE.MeshStandardMaterial({
-        color: 0x58834a,
-        roughness: 0.97
+
+        color:
+          0x5e9e55,
+
+        roughness:
+          0.95
+
       })
+
     );
+
 
   ground.rotation.x =
     -Math.PI / 2;
 
+
   ground.receiveShadow =
     true;
+
 
   world.add(
     ground
   );
 
 
-  const water =
-    new THREE.Mesh(
-      new THREE.CircleGeometry(
-        28,
-        64
-      ),
-      new THREE.MeshPhysicalMaterial({
-        color: 0x4c9bca,
-        transparent: true,
-        opacity: 0.72,
-        roughness: 0.12,
-        clearcoat: 0.7
-      })
-    );
+  const hillMaterial =
+    new THREE.MeshStandardMaterial({
 
-  water.rotation.x =
-    -Math.PI / 2;
+      color:
+        0x6ca760,
 
-  water.position.set(
-    55,
-    0.04,
-    -45
-  );
+      roughness:
+        1
 
-  world.add(
-    water
-  );
+    });
 
 
   for (
     let i = 0;
-    i < 150;
+    i < 45;
     i++
   ) {
 
-    const x =
-      rand(
-        -170,
-        170
-      );
+    const hill =
+      new THREE.Mesh(
 
-    const z =
-      rand(
-        -170,
-        170
-      );
+        new THREE.ConeGeometry(
 
-    if (
-      Math.hypot(
-        x,
-        z
-      ) < 16
-    ) {
-      continue;
-    }
-
-    if (
-      Math.random() <
-      0.68
-    ) {
-
-      const scale =
-        rand(
-          0.8,
-          1.35
-        );
-
-      const tree =
-        new THREE.Group();
-
-      const trunk =
-        new THREE.Mesh(
-          new THREE.CylinderGeometry(
-            0.28 * scale,
-            0.48 * scale,
-            4.3 * scale,
-            10
+          rand(
+            4,
+            13
           ),
-          new THREE.MeshStandardMaterial({
-            color: 0x6b482f,
-            roughness: 1
-          })
-        );
 
-      trunk.position.y =
-        2.15 * scale;
+          rand(
+            3,
+            9
+          ),
 
-      trunk.castShadow =
-        true;
+          8
 
-      tree.add(
-        trunk
+        ),
+
+        hillMaterial
+
       );
 
-      for (
-        let j = 0;
-        j < 3;
-        j++
-      ) {
 
-        const crown =
-          new THREE.Mesh(
-            new THREE.IcosahedronGeometry(
-              (
-                1.2 +
-                j * 0.12
-              ) * scale,
-              1
-            ),
-            new THREE.MeshStandardMaterial({
-              color:
-                pick([
-                  0x3f733a,
-                  0x4d8542,
-                  0x5a9148
-                ]),
-              roughness: 0.95
-            })
-          );
+    const angle =
+      Math.random() *
+      Math.PI *
+      2;
 
-        crown.position.set(
+
+    const radius =
+      rand(
+        55,
+        185
+      );
+
+
+    hill.position.set(
+
+      Math.cos(angle) *
+      radius,
+
+      0,
+
+      Math.sin(angle) *
+      radius
+
+    );
+
+
+    hill.castShadow =
+      true;
+
+    hill.receiveShadow =
+      true;
+
+
+    world.add(
+      hill
+    );
+
+  }
+
+
+  const trunkMaterial =
+    new THREE.MeshStandardMaterial({
+
+      color:
+        0x6b4833
+
+    });
+
+
+  const leafMaterial =
+    new THREE.MeshStandardMaterial({
+
+      color:
+        0x397f42,
+
+      roughness:
+        0.9
+
+    });
+
+
+  for (
+    let i = 0;
+    i < 90;
+    i++
+  ) {
+
+    const tree =
+      new THREE.Group();
+
+
+    const trunk =
+      new THREE.Mesh(
+
+        new THREE.CylinderGeometry(
+          0.2,
+          0.32,
           rand(
-            -0.4,
-            0.4
-          ) * scale,
+            2.5,
+            4.5
+          ),
+          8
+        ),
 
-          (
-            4 +
-            j * 0.55
-          ) * scale,
+        trunkMaterial
+
+      );
+
+
+    trunk.position.y =
+      1.5;
+
+
+    trunk.castShadow =
+      true;
+
+
+    tree.add(
+      trunk
+    );
+
+
+    const leaves =
+      new THREE.Mesh(
+
+        new THREE.SphereGeometry(
 
           rand(
-            -0.4,
-            0.4
-          ) * scale
-        );
+            1.3,
+            2.3
+          ),
 
-        crown.castShadow =
-          true;
+          10,
+          8
 
-        tree.add(
-          crown
-        );
+        ),
 
-      }
+        leafMaterial
 
-      tree.position.set(
-        x,
+      );
+
+
+    leaves.position.y =
+      rand(
+        3.4,
+        4.5
+      );
+
+
+    leaves.scale.y =
+      1.2;
+
+
+    leaves.castShadow =
+      true;
+
+
+    tree.add(
+      leaves
+    );
+
+
+    const angle =
+      Math.random() *
+      Math.PI *
+      2;
+
+
+    const radius =
+      rand(
+        25,
+        195
+      );
+
+
+    tree.position.set(
+
+      Math.cos(angle) *
+      radius,
+
+      0,
+
+      Math.sin(angle) *
+      radius
+
+    );
+
+
+    world.add(
+      tree
+    );
+
+  }
+
+
+  const rockMaterial =
+    new THREE.MeshStandardMaterial({
+
+      color:
+        0x78838a,
+
+      roughness:
+        1
+
+    });
+
+
+  for (
+    let i = 0;
+    i < 60;
+    i++
+  ) {
+
+    const rock =
+      new THREE.Mesh(
+
+        new THREE.DodecahedronGeometry(
+
+          rand(
+            0.4,
+            1.8
+          ),
+
+          0
+
+        ),
+
+        rockMaterial
+
+      );
+
+
+    rock.scale.y =
+      rand(
+        0.6,
+        1.4
+      );
+
+
+    rock.position.set(
+
+      rand(
+        -190,
+        190
+      ),
+
+      0.4,
+
+      rand(
+        -190,
+        190
+      )
+
+    );
+
+
+    rock.rotation.set(
+
+      rand(
         0,
-        z
-      );
+        2
+      ),
 
-      world.add(
-        tree
-      );
+      rand(
+        0,
+        2
+      ),
 
-    } else {
+      rand(
+        0,
+        2
+      )
 
-      const size =
-        rand(
-          0.5,
-          1.8
-        );
+    );
 
-      const rock =
-        new THREE.Mesh(
-          new THREE.DodecahedronGeometry(
-            size
-          ),
-          new THREE.MeshStandardMaterial({
-            color: 0x777c75,
-            roughness: 0.98
-          })
-        );
 
-      rock.position.set(
-        x,
-        size * 0.65,
-        z
-      );
+    rock.castShadow =
+      true;
 
-      rock.rotation.set(
-        rand(0, 2),
-        rand(0, 2),
-        rand(0, 2)
-      );
 
-      rock.castShadow =
-        true;
+    rock.receiveShadow =
+      true;
 
-      rock.receiveShadow =
-        true;
 
-      world.add(
-        rock
-      );
-
-    }
+    world.add(
+      rock
+    );
 
   }
 
@@ -962,87 +1165,18 @@ makeWorld();
 
 
 /* =========================================================
-   PLAYER
-========================================================= */
-
-function createFallbackPlayer() {
-
-  const group =
-    new THREE.Group();
-
-  const body =
-    new THREE.Mesh(
-      new THREE.CapsuleGeometry(
-        0.32,
-        0.9,
-        6,
-        10
-      ),
-      new THREE.MeshStandardMaterial({
-        color: 0x344e6c,
-        roughness: 0.75
-      })
-    );
-
-  body.position.y =
-    1.1;
-
-  const head =
-    new THREE.Mesh(
-      new THREE.SphereGeometry(
-        0.24,
-        18,
-        14
-      ),
-      new THREE.MeshStandardMaterial({
-        color: 0xd6ad8a,
-        roughness: 0.8
-      })
-    );
-
-  head.position.y =
-    1.92;
-
-  group.add(
-    body,
-    head
-  );
-
-  group.traverse(
-    object => {
-
-      if (
-        object.isMesh
-      ) {
-
-        object.castShadow =
-          true;
-
-        object.receiveShadow =
-          true;
-
-      }
-
-    }
-  );
-
-  return group;
-
-}
-
-
-/* =========================================================
-   AUTO SIZE MODELS
+   MODEL NORMALIZE
 ========================================================= */
 
 function normalizeModel(
   model,
-  targetHeight = 1.8
+  targetHeight = 2
 ) {
 
   model.updateMatrixWorld(
     true
   );
+
 
   const box =
     new THREE.Box3()
@@ -1050,20 +1184,25 @@ function normalizeModel(
         model
       );
 
+
   const size =
     new THREE.Vector3();
+
 
   box.getSize(
     size
   );
 
+
   if (
-    size.y > 0
+    size.y >
+    0
   ) {
 
     const scale =
       targetHeight /
       size.y;
+
 
     model.scale.multiplyScalar(
       scale
@@ -1071,31 +1210,22 @@ function normalizeModel(
 
   }
 
+
   model.updateMatrixWorld(
     true
   );
 
-  const box2 =
+
+  const correctedBox =
     new THREE.Box3()
       .setFromObject(
         model
       );
 
-  const center =
-    new THREE.Vector3();
-
-  box2.getCenter(
-    center
-  );
-
-  model.position.x -=
-    center.x;
-
-  model.position.z -=
-    center.z;
 
   model.position.y -=
-    box2.min.y;
+    correctedBox.min.y;
+
 
   model.traverse(
     object => {
@@ -1110,21 +1240,11 @@ function normalizeModel(
         object.receiveShadow =
           true;
 
-        if (
-          object.material?.map
-        ) {
-
-          object.material
-            .map
-            .colorSpace =
-            THREE.SRGBColorSpace;
-
-        }
-
       }
 
     }
   );
+
 
   return model;
 
@@ -1132,166 +1252,272 @@ function normalizeModel(
 
 
 /* =========================================================
-   AUTO MODEL LOADER
+   FILE EXTENSION
 ========================================================= */
 
 function extension(path) {
 
-  return path
-    .split("?")[0]
-    .split(".")
-    .pop()
-    .toLowerCase();
+  const clean =
+    path
+      .split("?")[0]
+      .toLowerCase();
+
+
+  return clean
+    .slice(
+      clean.lastIndexOf(".") +
+      1
+    );
 
 }
 
 
-async function loadOne(
-  path
-) {
+/* =========================================================
+   LOAD MODEL
+========================================================= */
 
-  const type =
+function loadOne(path) {
+
+  const ext =
     extension(
       path
     );
 
 
-  if (
-    type === "glb" ||
-    type === "gltf"
-  ) {
+  return new Promise(
 
-    const gltf =
-      await gltfLoader.loadAsync(
-        path
-      );
+    async (
+      resolve,
+      reject
+    ) => {
 
-    return {
-      scene:
-        gltf.scene,
+      try {
 
-      clips:
-        gltf.animations ||
-        [],
+        if (
+          ext === "glb" ||
+          ext === "gltf"
+        ) {
 
-      type
-    };
+          gltfLoader.load(
 
-  }
+            path,
 
+            gltf => {
 
-  if (
-    type === "fbx"
-  ) {
+              resolve({
 
-    const model =
-      await fbxLoader.loadAsync(
-        path
-      );
+                scene:
+                  gltf.scene,
 
-    return {
-      scene:
-        model,
+                clips:
+                  gltf.animations || []
 
-      clips:
-        model.animations ||
-        [],
+              });
 
-      type
-    };
+            },
 
-  }
+            undefined,
+
+            reject
+
+          );
 
 
-  if (
-    type === "obj"
-  ) {
+          return;
 
-    let materials =
-      null;
+        }
 
-    try {
 
-      materials =
-        await mtlLoader.loadAsync(
-          path.replace(
-            /\.obj$/i,
-            ".mtl"
+        if (
+          ext === "fbx"
+        ) {
+
+          fbxLoader.load(
+
+            path,
+
+            object => {
+
+              resolve({
+
+                scene:
+                  object,
+
+                clips:
+                  object.animations || []
+
+              });
+
+            },
+
+            undefined,
+
+            reject
+
+          );
+
+
+          return;
+
+        }
+
+
+        if (
+          ext === "obj"
+        ) {
+
+          const mtlPath =
+            path.replace(
+              /\.obj$/i,
+              ".mtl"
+            );
+
+
+          try {
+
+            const materials =
+              await new Promise(
+
+                (
+                  resolveMaterials,
+                  rejectMaterials
+                ) => {
+
+                  mtlLoader.load(
+
+                    mtlPath,
+
+                    resolveMaterials,
+
+                    undefined,
+
+                    rejectMaterials
+
+                  );
+
+                }
+
+              );
+
+
+            materials.preload();
+
+
+            objLoader.setMaterials(
+              materials
+            );
+
+          } catch {}
+
+
+          objLoader.load(
+
+            path,
+
+            object => {
+
+              resolve({
+
+                scene:
+                  object,
+
+                clips: []
+
+              });
+
+            },
+
+            undefined,
+
+            reject
+
+          );
+
+
+          return;
+
+        }
+
+
+        if (
+          ext === "stl"
+        ) {
+
+          stlLoader.load(
+
+            path,
+
+            geometry => {
+
+              geometry.computeVertexNormals();
+
+
+              const mesh =
+                new THREE.Mesh(
+
+                  geometry,
+
+                  new THREE.MeshStandardMaterial({
+
+                    color:
+                      0xaaaaaa,
+
+                    roughness:
+                      0.8
+
+                  })
+
+                );
+
+
+              resolve({
+
+                scene:
+                  mesh,
+
+                clips: []
+
+              });
+
+            },
+
+            undefined,
+
+            reject
+
+          );
+
+
+          return;
+
+        }
+
+
+        reject(
+          new Error(
+            `Unsupported model format: ${ext}`
           )
         );
 
-      materials.preload();
+      } catch (
+        error
+      ) {
 
-    } catch {}
+        reject(
+          error
+        );
 
-    if (
-      materials
-    ) {
-
-      objLoader.setMaterials(
-        materials
-      );
+      }
 
     }
 
-    const model =
-      await objLoader.loadAsync(
-        path
-      );
-
-    objLoader.setMaterials(
-      null
-    );
-
-    return {
-      scene:
-        model,
-      clips: [],
-      type
-    };
-
-  }
-
-
-  if (
-    type === "stl"
-  ) {
-
-    const geometry =
-      await stlLoader.loadAsync(
-        path
-      );
-
-    geometry.computeVertexNormals();
-
-    const model =
-      new THREE.Mesh(
-        geometry,
-        new THREE.MeshStandardMaterial({
-          color: 0xc7c9cd,
-          roughness: 0.78
-        })
-      );
-
-    return {
-      scene:
-        model,
-      clips: [],
-      type
-    };
-
-  }
-
-
-  throw new Error(
-    "Unsupported file type"
   );
 
 }
 
 
 /* =========================================================
-   TRY MULTIPLE FILE TYPES
+   TRY MODEL CANDIDATES
 ========================================================= */
 
 async function tryCandidates(
@@ -1310,14 +1536,19 @@ async function tryCandidates(
           file
         );
 
+
       return {
+
         ...asset,
+
         file
+
       };
 
     } catch {}
 
   }
+
 
   return null;
 
@@ -1334,19 +1565,23 @@ function makeMixer(
 ) {
 
   entity.clips =
-    clips ||
-    [];
+    clips || [];
+
 
   if (
     !entity.clips.length
   ) {
+
     return;
+
   }
+
 
   entity.mixer =
     new THREE.AnimationMixer(
       entity.model
     );
+
 
   state.mixers.push(
     entity.mixer
@@ -1363,8 +1598,11 @@ function findClip(
   if (
     !entity.clips?.length
   ) {
+
     return null;
+
   }
+
 
   for (
     const name of
@@ -1373,21 +1611,27 @@ function findClip(
 
     const clip =
       entity.clips.find(
+
         animation =>
           animation.name
             .toLowerCase()
             .includes(
               name
             )
+
       );
+
 
     if (
       clip
     ) {
+
       return clip;
+
     }
 
   }
+
 
   return (
     entity.clips[0] ||
@@ -1407,8 +1651,11 @@ function play(
     entity.animMode ===
     mode
   ) {
+
     return;
+
   }
+
 
   const types = {
 
@@ -1447,24 +1694,33 @@ function play(
 
   };
 
+
   const clip =
     findClip(
+
       entity,
+
       types[mode] ||
       [mode]
+
     );
+
 
   if (
     !clip
   ) {
+
     return;
+
   }
+
 
   const next =
     entity.mixer
       .clipAction(
         clip
       );
+
 
   if (
     entity.currentAction &&
@@ -1479,6 +1735,7 @@ function play(
 
   }
 
+
   next
     .reset()
     .fadeIn(
@@ -1486,8 +1743,10 @@ function play(
     )
     .play();
 
+
   entity.currentAction =
     next;
+
 
   entity.animMode =
     mode;
@@ -1507,12 +1766,23 @@ let characterOptions =
   JSON.parse(
     localStorage.getItem(
       CHARACTER_SAVE_KEY
-    ) || "null"
-  ) || {
-    hairColor: "#24160f",
-    skinColor: "#d7a47e",
-    body: "normal",
-    height: "normal"
+    ) ||
+    "null"
+  ) ||
+  {
+
+    hairColor:
+      "#24160f",
+
+    skinColor:
+      "#d7a47e",
+
+    body:
+      "normal",
+
+    height:
+      "normal"
+
   };
 
 
@@ -1526,6 +1796,7 @@ function openCharacterCreator() {
           "div"
         );
 
+
       overlay.style.cssText = `
         position:fixed;
         inset:0;
@@ -1537,6 +1808,7 @@ function openCharacterCreator() {
         font-family:Arial,sans-serif;
         color:white;
       `;
+
 
       overlay.innerHTML = `
 
@@ -1613,9 +1885,19 @@ function openCharacterCreator() {
               border:1px solid rgba(255,255,255,.15);
             "
           >
-            <option value="slim">Slim</option>
-            <option value="normal">Normal</option>
-            <option value="large">Large</option>
+
+            <option value="slim">
+              Slim
+            </option>
+
+            <option value="normal">
+              Normal
+            </option>
+
+            <option value="large">
+              Large
+            </option>
+
           </select>
 
           <label>
@@ -1627,16 +1909,26 @@ function openCharacterCreator() {
             style="
               width:100%;
               padding:14px;
-              margin:8px 0 24px;
+              margin:8px 0 22px;
               border-radius:12px;
               background:#172536;
               color:white;
               border:1px solid rgba(255,255,255,.15);
             "
           >
-            <option value="short">Short</option>
-            <option value="normal">Normal</option>
-            <option value="tall">Tall</option>
+
+            <option value="short">
+              Short
+            </option>
+
+            <option value="normal">
+              Normal
+            </option>
+
+            <option value="tall">
+              Tall
+            </option>
+
           </select>
 
           <div style="
@@ -1646,13 +1938,15 @@ function openCharacterCreator() {
 
             <button
               id="randomCharacter"
+              type="button"
               style="
                 flex:1;
-                padding:15px;
-                border-radius:14px;
-                border:0;
+                padding:14px;
+                border:none;
+                border-radius:13px;
+                background:#24364a;
+                color:white;
                 cursor:pointer;
-                font-weight:bold;
               "
             >
               Random
@@ -1660,15 +1954,16 @@ function openCharacterCreator() {
 
             <button
               id="startCharacter"
+              type="button"
               style="
                 flex:2;
-                padding:15px;
-                border-radius:14px;
-                border:0;
-                cursor:pointer;
-                font-weight:bold;
-                background:#4da6ff;
+                padding:14px;
+                border:none;
+                border-radius:13px;
+                background:linear-gradient(135deg,#397fca,#56b8ff);
                 color:white;
+                font-weight:800;
+                cursor:pointer;
               "
             >
               Start Adventure
@@ -1677,37 +1972,32 @@ function openCharacterCreator() {
           </div>
 
         </div>
+
       `;
+
 
       document.body.appendChild(
         overlay
       );
 
-      const hair =
-        overlay.querySelector(
-          "#characterHair"
-        );
 
-      const skin =
-        overlay.querySelector(
-          "#characterSkin"
-        );
-
-      const body =
+      const bodySelect =
         overlay.querySelector(
           "#characterBody"
         );
 
-      const height =
+
+      const heightSelect =
         overlay.querySelector(
           "#characterHeight"
         );
 
 
-      body.value =
+      bodySelect.value =
         characterOptions.body;
 
-      height.value =
+
+      heightSelect.value =
         characterOptions.height;
 
 
@@ -1715,102 +2005,123 @@ function openCharacterCreator() {
         .querySelector(
           "#randomCharacter"
         )
-        .onclick = () => {
+        .addEventListener(
+          "click",
+          () => {
 
-          const hairColors = [
-            "#22130c",
-            "#111111",
-            "#6c3c22",
-            "#d7b36a",
-            "#dddddd",
-            "#3158a6",
-            "#7d3fa3",
-            "#b33247"
-          ];
+            const hairColors = [
+              "#24160f",
+              "#5b311c",
+              "#b2763d",
+              "#161616",
+              "#c8c8c8",
+              "#334b82",
+              "#703455"
+            ];
 
-          const skinColors = [
-            "#f0c7a5",
-            "#dba47e",
-            "#b97955",
-            "#855136",
-            "#5e3828"
-          ];
 
-          const bodies = [
-            "slim",
-            "normal",
-            "large"
-          ];
+            const skinColors = [
+              "#f0c7a5",
+              "#d7a47e",
+              "#b97855",
+              "#8d563c",
+              "#70402c"
+            ];
 
-          const heights = [
-            "short",
-            "normal",
-            "tall"
-          ];
 
-          hair.value =
-            pick(
-              hairColors
-            );
+            overlay.querySelector(
+              "#characterHair"
+            ).value =
+              pick(
+                hairColors
+              );
 
-          skin.value =
-            pick(
-              skinColors
-            );
 
-          body.value =
-            pick(
-              bodies
-            );
+            overlay.querySelector(
+              "#characterSkin"
+            ).value =
+              pick(
+                skinColors
+              );
 
-          height.value =
-            pick(
-              heights
-            );
 
-        };
+            bodySelect.value =
+              pick([
+                "slim",
+                "normal",
+                "large"
+              ]);
+
+
+            heightSelect.value =
+              pick([
+                "short",
+                "normal",
+                "tall"
+              ]);
+
+          }
+        );
 
 
       overlay
         .querySelector(
           "#startCharacter"
         )
-        .onclick = () => {
+        .addEventListener(
+          "click",
+          () => {
 
-          characterOptions = {
+            characterOptions = {
 
-            hairColor:
-              hair.value,
+              hairColor:
+                overlay.querySelector(
+                  "#characterHair"
+                ).value,
 
-            skinColor:
-              skin.value,
+              skinColor:
+                overlay.querySelector(
+                  "#characterSkin"
+                ).value,
 
-            body:
-              body.value,
+              body:
+                bodySelect.value,
 
-            height:
-              height.value
+              height:
+                heightSelect.value
 
-          };
+            };
 
-          localStorage.setItem(
-            CHARACTER_SAVE_KEY,
-            JSON.stringify(
-              characterOptions
-            )
-          );
 
-          overlay.remove();
+            localStorage.setItem(
 
-          resolve();
+              CHARACTER_SAVE_KEY,
 
-        };
+              JSON.stringify(
+                characterOptions
+              )
+
+            );
+
+
+            overlay.remove();
+
+
+            resolve();
+
+          }
+        );
 
     }
+
   );
 
 }
 
+
+/* =========================================================
+   CHARACTER MODEL CUSTOMIZATION
+========================================================= */
 
 function customizeCharacter(
   model
@@ -1819,40 +2130,52 @@ function customizeCharacter(
   let widthScale =
     1;
 
+
   if (
     characterOptions.body ===
     "slim"
   ) {
+
     widthScale =
-      0.82;
+      0.88;
+
   }
+
 
   if (
     characterOptions.body ===
     "large"
   ) {
+
     widthScale =
-      1.18;
+      1.14;
+
   }
 
 
   let heightScale =
     1;
 
+
   if (
     characterOptions.height ===
     "short"
   ) {
+
     heightScale =
-      0.90;
+      0.9;
+
   }
+
 
   if (
     characterOptions.height ===
     "tall"
   ) {
+
     heightScale =
-      1.10;
+      1.1;
+
   }
 
 
@@ -1872,116 +2195,92 @@ function customizeCharacter(
       if (
         !object.isMesh
       ) {
+
         return;
+
       }
 
-      const meshName =
+
+      const name =
         object.name
           .toLowerCase();
 
 
-      if (
-        meshName.includes(
-          "hair"
-        ) ||
-        meshName.includes(
-          "head_hair"
+      const materials =
+        Array.isArray(
+          object.material
         )
+          ? object.material
+          : [object.material];
+
+
+      const clonedMaterials =
+        materials.map(
+          material =>
+            material?.clone
+              ? material.clone()
+              : material
+        );
+
+
+      if (
+        name.includes("hair") ||
+        name.includes("head_hair")
       ) {
 
-        if (
-          Array.isArray(
-            object.material
-          )
+        for (
+          const material of
+          clonedMaterials
         ) {
 
-          object.material =
-            object.material.map(
-              material => {
+          if (
+            material?.color
+          ) {
 
-                const copy =
-                  material.clone();
-
-                copy.color =
-                  new THREE.Color(
-                    characterOptions.hairColor
-                  );
-
-                return copy;
-
-              }
-            );
-
-        } else if (
-          object.material
-        ) {
-
-          object.material =
-            object.material.clone();
-
-          object.material.color =
-            new THREE.Color(
+            material.color.set(
               characterOptions.hairColor
             );
 
+          }
+
         }
 
       }
 
 
       if (
-        meshName.includes(
-          "skin"
-        ) ||
-        meshName.includes(
-          "face"
-        ) ||
-        meshName.includes(
-          "head"
-        ) ||
-        meshName.includes(
-          "body_skin"
-        )
+        name.includes("skin") ||
+        name.includes("face") ||
+        name.includes("head") ||
+        name.includes("body_skin")
       ) {
 
-        if (
-          Array.isArray(
-            object.material
-          )
+        for (
+          const material of
+          clonedMaterials
         ) {
 
-          object.material =
-            object.material.map(
-              material => {
+          if (
+            material?.color
+          ) {
 
-                const copy =
-                  material.clone();
-
-                copy.color =
-                  new THREE.Color(
-                    characterOptions.skinColor
-                  );
-
-                return copy;
-
-              }
-            );
-
-        } else if (
-          object.material
-        ) {
-
-          object.material =
-            object.material.clone();
-
-          object.material.color =
-            new THREE.Color(
+            material.color.set(
               characterOptions.skinColor
             );
+
+          }
 
         }
 
       }
+
+
+      object.material =
+        Array.isArray(
+          object.material
+        )
+          ? clonedMaterials
+          : clonedMaterials[0];
 
     }
   );
@@ -1993,7 +2292,141 @@ function customizeCharacter(
 
 
 /* =========================================================
-   PLAYER MODEL
+   FALLBACK PLAYER
+========================================================= */
+
+function createFallbackPlayer() {
+
+  const group =
+    new THREE.Group();
+
+
+  const body =
+    new THREE.Mesh(
+
+      new THREE.CapsuleGeometry(
+        0.34,
+        0.8,
+        6,
+        12
+      ),
+
+      new THREE.MeshStandardMaterial({
+
+        color:
+          0x315d8c
+
+      })
+
+    );
+
+
+  body.position.y =
+    1.1;
+
+
+  body.name =
+    "body";
+
+
+  group.add(
+    body
+  );
+
+
+  const head =
+    new THREE.Mesh(
+
+      new THREE.SphereGeometry(
+        0.32,
+        18,
+        14
+      ),
+
+      new THREE.MeshStandardMaterial({
+
+        color:
+          0xd7a47e
+
+      })
+
+    );
+
+
+  head.position.y =
+    1.95;
+
+
+  head.name =
+    "head_skin";
+
+
+  group.add(
+    head
+  );
+
+
+  const hair =
+    new THREE.Mesh(
+
+      new THREE.SphereGeometry(
+        0.33,
+        16,
+        10,
+        0,
+        Math.PI *
+        2,
+        0,
+        Math.PI /
+        2
+      ),
+
+      new THREE.MeshStandardMaterial({
+
+        color:
+          0x24160f
+
+      })
+
+    );
+
+
+  hair.position.y =
+    2.08;
+
+
+  hair.name =
+    "hair";
+
+
+  group.add(
+    hair
+  );
+
+
+  group.traverse(
+    object => {
+
+      if (
+        object.isMesh
+      ) {
+
+        object.castShadow =
+          true;
+
+      }
+
+    }
+  );
+
+
+  return group;
+
+}
+
+
+/* =========================================================
+   PLAYER
 ========================================================= */
 
 async function loadPlayer() {
@@ -2037,10 +2470,7 @@ async function loadPlayer() {
 
     clips: [],
 
-    animMode: "",
-
-    currentAction:
-      null
+    animMode: ""
 
   };
 
@@ -2052,18 +2482,23 @@ async function loadPlayer() {
         "assets/player/player.glb"
       );
 
+
     player.model =
       customizeCharacter(
+
         normalizeModel(
           asset.scene,
           1.9
         )
+
       );
+
 
     makeMixer(
       player,
       asset.clips
     );
+
 
     play(
       player,
@@ -2077,18 +2512,22 @@ async function loadPlayer() {
         createFallbackPlayer()
       );
 
+
     msg(
-      "player.glb missing — temporary 3D player used"
+      "Player model unavailable — temporary explorer loaded"
     );
 
   }
 
 
   player.model.position.set(
+
     player.x,
     player.y,
     player.z
+
   );
+
 
   world.add(
     player.model
@@ -2102,60 +2541,178 @@ async function loadPlayer() {
 
 
 /* =========================================================
-   LOAD PALS
+   LOAD ONE PAL
 ========================================================= */
 
-async function loadPals() {
+async function loadPal(
+  definition
+) {
 
-  let loaded =
-    0;
-
-  for (
-    const definition of
-    PAL_LIBRARY
+  if (
+    state.cache.has(
+      definition.id
+    )
   ) {
 
-    const asset =
-      await tryCandidates(
-        definition
-      );
+    return true;
 
-    if (
-      !asset
-    ) {
+  }
 
-      console.warn(
-        "Missing model:",
-        definition.name
-      );
 
-      continue;
+  const asset =
+    await tryCandidates(
+      definition
+    );
+
+
+  if (
+    !asset
+  ) {
+
+    console.warn(
+      "Missing model:",
+      definition.name
+    );
+
+
+    return false;
+
+  }
+
+
+  normalizeModel(
+
+    asset.scene,
+
+    definition.height
+
+  );
+
+
+  state.cache.set(
+
+    definition.id,
+
+    {
+
+      ...asset,
+
+      source:
+        asset.scene
 
     }
 
-    normalizeModel(
-      asset.scene,
-      definition.height
+  );
+
+
+  console.log(
+
+    `Loaded ${definition.name} from ${asset.file}`
+
+  );
+
+
+  return true;
+
+}
+
+
+/* =========================================================
+   QUICK START PAL LOAD
+
+   Only a few Pals are required before gameplay begins.
+========================================================= */
+
+async function loadStarterPals() {
+
+  const starters =
+    PAL_LIBRARY.slice(
+      0,
+      4
     );
 
-    state.cache.set(
-      definition.id,
-      {
-        ...asset,
-        source:
-          asset.scene
-      }
+
+  const results =
+    await Promise.allSettled(
+
+      starters.map(
+        definition =>
+          loadPal(
+            definition
+          )
+      )
+
     );
 
-    loaded++;
 
-    console.log(
-      `Loaded ${definition.name} from ${asset.file}`
+  return results.filter(
+
+    result =>
+      result.status ===
+      "fulfilled" &&
+      result.value ===
+      true
+
+  ).length;
+
+}
+
+
+/* =========================================================
+   LOAD REMAINING PALS IN BACKGROUND
+========================================================= */
+
+async function loadRemainingPals() {
+
+  const remaining =
+    PAL_LIBRARY.slice(
+      4
+    );
+
+
+  const batchSize =
+    3;
+
+
+  for (
+    let i = 0;
+    i < remaining.length;
+    i += batchSize
+  ) {
+
+    const batch =
+      remaining.slice(
+        i,
+        i + batchSize
+      );
+
+
+    await Promise.allSettled(
+
+      batch.map(
+        definition =>
+          loadPal(
+            definition
+          )
+      )
+
+    );
+
+
+    await new Promise(
+      resolve =>
+        setTimeout(
+          resolve,
+          60
+        )
     );
 
   }
 
-  return loaded;
+
+  msg(
+    "All available Pals finished loading"
+  );
 
 }
 
@@ -2168,39 +2725,31 @@ function cloneAsset(
   cached
 ) {
 
-  if (
-    cached.type ===
-    "glb" ||
-
-    cached.type ===
-    "gltf" ||
-
-    cached.type ===
-    "fbx"
-  ) {
-
-    return cloneSkinned(
+  const model =
+    cloneSkinned(
       cached.source
     );
 
-  }
 
-  return cached.source.clone(
-    true
-  );
+  return {
+
+    model,
+
+    clips:
+      cached.clips || []
+
+  };
 
 }
 
 
 /* =========================================================
-   SPAWN PAL
+   SPAWN CREATURE
 ========================================================= */
 
 function spawnCreature(
   definition,
-  x,
-  z,
-  level = 1
+  position = null
 ) {
 
   const cached =
@@ -2208,109 +2757,137 @@ function spawnCreature(
       definition.id
     );
 
+
   if (
     !cached
   ) {
+
     return null;
+
   }
 
-  const model =
+
+  const clone =
     cloneAsset(
       cached
-    );
-
-  model.position.set(
-    x,
-    definition.mount ===
-    "flying"
-      ? (
-          definition.boss
-            ? 7
-            : 2.2
-        )
-      : 0,
-    z
-  );
-
-  world.add(
-    model
-  );
-
-
-  const maxHp =
-    definition.hp *
-    (
-      definition.boss
-        ? 2.15
-        : 1
     );
 
 
   const creature = {
 
-    def:
-      definition,
+    id:
+      `${definition.id}-${Math.random().toString(36).slice(2)}`,
 
-    model,
+    definition,
 
-    x,
+    model:
+      clone.model,
 
-    z,
-
-    level,
-
-    hp:
-      maxHp,
-
-    maxHp,
-
-    alive:
-      true,
-
-    boss:
-      !!definition.boss,
-
-    aggressive:
-      false,
-
-    direction:
-      rand(
-        0,
-        Math.PI * 2
-      ),
-
-    changeAt:
-      performance.now() +
-      rand(
-        1500,
-        3500
-      ),
+    clips:
+      clone.clips,
 
     mixer:
       null,
 
-    clips:
-      cached.clips ||
-      [],
+    currentAction:
+      null,
 
     animMode:
       "",
 
-    currentAction:
-      null,
+    hp:
+      definition.hp,
 
-    bobSeed:
+    maxHp:
+      definition.hp,
+
+    level:
+      Math.max(
+        1,
+        Math.round(
+          rand(
+            1,
+            12
+          )
+        )
+      ),
+
+    dead:
+      false,
+
+    captured:
+      false,
+
+    velocity:
+      new THREE.Vector3(),
+
+    wanderAngle:
       rand(
         0,
-        10
-      )
+        Math.PI *
+        2
+      ),
+
+    wanderTimer:
+      rand(
+        1,
+        4
+      ),
+
+    attackCooldown:
+      0
 
   };
 
 
+  if (
+    position
+  ) {
+
+    creature.model.position.copy(
+      position
+    );
+
+  } else {
+
+    const angle =
+      rand(
+        0,
+        Math.PI *
+        2
+      );
+
+
+    const radius =
+      rand(
+        20,
+        100
+      );
+
+
+    creature.model.position.set(
+
+      Math.cos(angle) *
+      radius,
+
+      0,
+
+      Math.sin(angle) *
+      radius
+
+    );
+
+  }
+
+
+  world.add(
+    creature.model
+  );
+
+
   makeMixer(
     creature,
-    creature.clips
+    clone.clips
   );
 
 
@@ -2320,22 +2897,6 @@ function spawnCreature(
     "flying"
       ? "fly"
       : "idle"
-  );
-
-
-  model.traverse(
-    object => {
-
-      if (
-        object.isMesh
-      ) {
-
-        object.userData.creature =
-          creature;
-
-      }
-
-    }
   );
 
 
@@ -2350,117 +2911,75 @@ function spawnCreature(
 
 
 /* =========================================================
-   SPAWN WORLD
+   SPAWN AVAILABLE WORLD PALS
 ========================================================= */
 
-function spawnWorldPals() {
+function spawnWorldPals(
+  onlyMissing = false
+) {
 
-  const definitions =
-    PAL_LIBRARY.filter(
-      definition =>
-        state.cache.has(
-          definition.id
-        )
-    );
+  for (
+    const definition of
+    PAL_LIBRARY
+  ) {
+
+    if (
+      !state.cache.has(
+        definition.id
+      )
+    ) {
+
+      continue;
+
+    }
 
 
-  definitions.forEach(
-    (
-      definition,
-      index
-    ) => {
+    if (
+      onlyMissing
+    ) {
 
-      const angle =
-        index /
-        Math.max(
-          1,
-          definitions.length
-        ) *
-        Math.PI *
-        2;
+      const alreadyExists =
+        state.creatures.some(
 
-      const radius =
-        definition.boss
-          ? 115
-          : 38 +
-            (
-              index %
-              5
-            ) *
-            16;
+          creature =>
+            creature.definition.id ===
+            definition.id
 
+        );
+
+
+      if (
+        alreadyExists
+      ) {
+
+        continue;
+
+      }
+
+    }
+
+
+    const count =
+      definition.boss
+        ? 1
+        : Math.max(
+            1,
+            5 -
+            definition.rarity
+          );
+
+
+    for (
+      let i = 0;
+      i < count;
+      i++
+    ) {
 
       spawnCreature(
-        definition,
-
-        Math.sin(
-          angle
-        ) *
-        radius +
-        rand(
-          -5,
-          5
-        ),
-
-        Math.cos(
-          angle
-        ) *
-        radius +
-        rand(
-          -5,
-          5
-        ),
-
-        definition.boss
-          ? 25
-          : Math.floor(
-              rand(
-                2,
-                15
-              )
-            )
+        definition
       );
 
     }
-  );
-
-
-  const normal =
-    definitions.filter(
-      definition =>
-        !definition.boss
-    );
-
-
-  for (
-    let i = 0;
-    i < 18 &&
-    normal.length;
-    i++
-  ) {
-
-    spawnCreature(
-      pick(
-        normal
-      ),
-
-      rand(
-        -125,
-        125
-      ),
-
-      rand(
-        -125,
-        125
-      ),
-
-      Math.floor(
-        rand(
-          2,
-          16
-        )
-      )
-    );
 
   }
 
@@ -2468,7 +2987,7 @@ function spawnWorldPals() {
 
 
 /* =========================================================
-   HYPER SPHERE
+   HYPER SPHERE MODEL
 ========================================================= */
 
 async function loadHyperSphere() {
@@ -2480,11 +2999,15 @@ async function loadHyperSphere() {
         "assets/items/hyper-sphere.glb"
       );
 
+
+    normalizeModel(
+      asset.scene,
+      0.42
+    );
+
+
     state.sphereModel =
-      normalizeModel(
-        asset.scene,
-        0.36
-      );
+      asset.scene;
 
   } catch {
 
@@ -2497,28 +3020,12 @@ async function loadHyperSphere() {
 
 
 /* =========================================================
-   CREATE SPHERE
+   PROCEDURAL SPHERE
 ========================================================= */
 
-function createSphere(
-  tier
+function createSphereModel(
+  sphere
 ) {
-
-  if (
-    tier === 3 &&
-    state.sphereModel
-  ) {
-
-    return cloneSkinned(
-      state.sphereModel
-    );
-
-  }
-
-
-  const definition =
-    SPHERES[tier];
-
 
   const group =
     new THREE.Group();
@@ -2526,51 +3033,67 @@ function createSphere(
 
   const shell =
     new THREE.Mesh(
+
       new THREE.SphereGeometry(
         0.18,
-        24,
-        18
+        20,
+        16
       ),
+
       new THREE.MeshStandardMaterial({
+
         color:
-          definition.color,
+          sphere.color,
+
         metalness:
-          0.38,
+          0.35,
+
         roughness:
-          0.2,
-        emissive:
-          definition.color,
-        emissiveIntensity:
-          0.15
+          0.28
+
       })
+
     );
+
+
+  shell.castShadow =
+    true;
+
+
+  group.add(
+    shell
+  );
 
 
   const ring =
     new THREE.Mesh(
+
       new THREE.TorusGeometry(
-        0.185,
-        0.022,
+        0.18,
+        0.025,
         8,
-        28
+        22
       ),
+
       new THREE.MeshStandardMaterial({
+
         color:
           0xffffff,
-        metalness:
-          0.55,
-        roughness:
-          0.25
+
+        emissive:
+          0x222222
+
       })
+
     );
 
 
   ring.rotation.x =
-    Math.PI / 2;
+    Math.PI /
+    2;
 
 
   group.add(
-    shell,
     ring
   );
 
@@ -2581,26 +3104,42 @@ function createSphere(
 
 
 /* =========================================================
-   TARGET
+   TARGETING
 ========================================================= */
 
 const raycaster =
   new THREE.Raycaster();
 
 
-function findTarget() {
+function updateTarget() {
+
+  if (
+    !state.player
+  ) {
+
+    return;
+
+  }
+
 
   raycaster.setFromCamera(
+
     new THREE.Vector2(
       0,
       0
     ),
+
     camera
+
   );
 
 
-  const meshes =
-    [];
+  let nearest =
+    null;
+
+
+  let nearestDistance =
+    Infinity;
 
 
   for (
@@ -2609,50 +3148,67 @@ function findTarget() {
   ) {
 
     if (
-      !creature.alive ||
-      !creature.model.visible
+      creature.dead ||
+      creature.captured
     ) {
+
       continue;
+
     }
 
-    creature.model.traverse(
-      object => {
 
-        if (
-          object.isMesh
-        ) {
+    const box =
+      new THREE.Box3()
+        .setFromObject(
+          creature.model
+        );
 
-          meshes.push(
-            object
-          );
 
-        }
+    const hit =
+      raycaster.ray.intersectBox(
 
-      }
-    );
+        box,
+
+        new THREE.Vector3()
+
+      );
+
+
+    if (
+      !hit
+    ) {
+
+      continue;
+
+    }
+
+
+    const distance =
+      hit.distanceTo(
+        camera.position
+      );
+
+
+    if (
+      distance <
+      nearestDistance &&
+      distance <
+      28
+    ) {
+
+      nearest =
+        creature;
+
+      nearestDistance =
+        distance;
+
+    }
 
   }
 
 
-  const hit =
-    raycaster
-      .intersectObjects(
-        meshes,
-        false
-      )[0];
-
-
   state.target =
-    hit &&
-    hit.distance <
-    30
-      ? (
-          hit.object
-            .userData
-            .creature ||
-          null
-        )
-      : null;
+    nearest;
 
 }
 
@@ -2662,34 +3218,50 @@ function findTarget() {
 ========================================================= */
 
 function captureChance(
-  creature,
-  tier =
-    state.save
-      .selectedSphere
+  creature
 ) {
 
-  const weaken =
+  if (
+    !creature
+  ) {
+
+    return 0;
+
+  }
+
+
+  const sphere =
+    SPHERES[
+      state.save.selectedSphere
+    ];
+
+
+  const hpFactor =
     1 -
     creature.hp /
     creature.maxHp;
 
 
+  const rarityFactor =
+    1 /
+    creature.definition.rarity;
+
+
+  let chance =
+    0.14 +
+    hpFactor *
+    0.55 +
+    rarityFactor *
+    0.2;
+
+
+  chance *=
+    sphere.bonus;
+
+
   return clamp(
-    (
-      0.16 +
-      weaken *
-      0.72
-    ) *
-    SPHERES[tier]
-      .bonus /
-    (
-      1 +
-      creature.def.rarity *
-      0.22 +
-      creature.level *
-      0.015
-    ),
-    0.03,
+    chance,
+    0.05,
     0.95
   );
 
@@ -2697,127 +3269,75 @@ function captureChance(
 
 
 /* =========================================================
-   ATTACK
-========================================================= */
-
-function attackTarget() {
-
-  const creature =
-    state.target;
-
-
-  if (
-    !creature?.alive ||
-    state.charging
-  ) {
-    return;
-  }
-
-
-  creature.hp =
-    Math.max(
-      0,
-      creature.hp -
-      (
-        18 +
-        state.save.level *
-        1.5
-      )
-    );
-
-
-  creature.aggressive =
-    true;
-
-
-  play(
-    creature,
-    "hurt"
-  );
-
-
-  msg(
-    `${creature.def.name} HP ${Math.ceil(creature.hp)}`
-  );
-
-
-  if (
-    creature.hp <=
-    0
-  ) {
-
-    creature.alive =
-      false;
-
-    creature.model.visible =
-      false;
-
-    msg(
-      `${creature.def.name} defeated`
-    );
-
-  } else {
-
-    setTimeout(
-      () => {
-
-        if (
-          creature.alive
-        ) {
-
-          play(
-            creature,
-            creature.def.mount ===
-            "flying"
-              ? "fly"
-              : "run"
-          );
-
-        }
-
-      },
-      320
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   HOLD SPHERE
+   SPHERE AIM
 ========================================================= */
 
 function beginSphere() {
 
   if (
     state.charging ||
-    state.mounted
+    !state.player
   ) {
+
     return;
+
   }
 
 
-  const tier =
-    state.save
-      .selectedSphere;
+  const index =
+    state.save.selectedSphere;
 
 
   if (
-    (
-      state.save
-        .spheres[tier] ||
-      0
-    ) <= 0
+    state.save.spheres[index] <=
+    0
   ) {
 
     msg(
-      "No capture Spheres"
+      "No Sphere available"
     );
+
 
     return;
 
   }
+
+
+  const sphere =
+    SPHERES[index];
+
+
+  let model;
+
+
+  if (
+    sphere.name ===
+    "Hyper Sphere" &&
+    state.sphereModel
+  ) {
+
+    model =
+      state.sphereModel.clone(
+        true
+      );
+
+  } else {
+
+    model =
+      createSphereModel(
+        sphere
+      );
+
+  }
+
+
+  world.add(
+    model
+  );
+
+
+  state.heldSphere =
+    model;
 
 
   state.charging =
@@ -2826,79 +3346,6 @@ function beginSphere() {
 
   state.chargeStart =
     performance.now();
-
-
-  state.heldSphere =
-    createSphere(
-      tier
-    );
-
-
-  scene.add(
-    state.heldSphere
-  );
-
-}
-
-
-function updateHeldSphere() {
-
-  if (
-    !state.heldSphere
-  ) {
-    return;
-  }
-
-
-  const direction =
-    new THREE.Vector3();
-
-
-  camera.getWorldDirection(
-    direction
-  );
-
-
-  const right =
-    new THREE.Vector3()
-      .crossVectors(
-        direction,
-        camera.up
-      )
-      .normalize();
-
-
-  state.heldSphere
-    .position
-    .copy(
-      camera.position
-    )
-    .add(
-      direction
-        .clone()
-        .multiplyScalar(
-          1.15
-        )
-    )
-    .add(
-      right
-        .multiplyScalar(
-          0.42
-        )
-    )
-    .add(
-      new THREE.Vector3(
-        0,
-        -0.34,
-        0
-      )
-    );
-
-
-  state.heldSphere
-    .rotation
-    .y +=
-    0.06;
 
 }
 
@@ -2911,31 +3358,49 @@ function releaseSphere() {
 
   if (
     !state.charging ||
-    !state.heldSphere
+    !state.heldSphere ||
+    !state.player
   ) {
+
     return;
+
   }
 
 
-  const tier =
-    state.save
-      .selectedSphere;
+  const index =
+    state.save.selectedSphere;
 
 
-  state.save
-    .spheres[tier]--;
+  if (
+    state.save.spheres[index] <=
+    0
+  ) {
+
+    return;
+
+  }
+
+
+  state.save.spheres[index]--;
 
 
   const charge =
     clamp(
+
       (
         performance.now() -
         state.chargeStart
       ) /
-      900,
-      0.25,
+      1200,
+
+      0,
       1
+
     );
+
+
+  const model =
+    state.heldSphere;
 
 
   const direction =
@@ -2947,37 +3412,45 @@ function releaseSphere() {
   );
 
 
-  state.projectiles.push({
+  model.position.copy(
+    camera.position
+  );
 
-    mesh:
-      state.heldSphere,
+
+  model.position.add(
+    direction
+      .clone()
+      .multiplyScalar(
+        1.1
+      )
+  );
+
+
+  const projectile = {
+
+    model,
 
     velocity:
       direction
+        .clone()
         .multiplyScalar(
-          13 +
-          13 *
-          charge
-        )
-        .add(
-          new THREE.Vector3(
-            0,
-            3.2 +
-            2 *
-            charge,
-            0
-          )
+          11 +
+          charge *
+          12
         ),
 
     life:
       5,
 
-    tier,
+    sphereIndex:
+      index
 
-    dead:
-      false
+  };
 
-  });
+
+  state.projectiles.push(
+    projectile
+  );
 
 
   state.heldSphere =
@@ -2988,115 +3461,7 @@ function releaseSphere() {
     false;
 
 
-  msg(
-    `${SPHERES[tier].name} thrown`
-  );
-
-}
-
-
-/* =========================================================
-   CAPTURE
-========================================================= */
-
-function resolveCapture(
-  creature,
-  projectile
-) {
-
-  projectile.dead =
-    true;
-
-
-  projectile.mesh.visible =
-    false;
-
-
-  const chance =
-    captureChance(
-      creature,
-      projectile.tier
-    );
-
-
-  creature.model.visible =
-    false;
-
-
-  msg(
-    `Capturing ${creature.def.name}… ${Math.round(chance * 100)}%`
-  );
-
-
-  setTimeout(
-    () => {
-
-      if (
-        Math.random() <
-        chance
-      ) {
-
-        creature.alive =
-          false;
-
-
-        state.save.box.push(
-          creature.def.id
-        );
-
-
-        if (
-          state.save.party.length <
-          5
-        ) {
-
-          state.save.party.push(
-            creature.def.id
-          );
-
-        }
-
-
-        state.save.xp +=
-          40 *
-          creature.def.rarity;
-
-
-        msg(
-          `${creature.def.name} captured!`
-        );
-
-
-        saveGame();
-
-      } else {
-
-        creature.model.visible =
-          true;
-
-
-        creature.aggressive =
-          true;
-
-
-        play(
-          creature,
-          creature.def.mount ===
-          "flying"
-            ? "fly"
-            : "run"
-        );
-
-
-        msg(
-          `${creature.def.name} escaped!`
-        );
-
-      }
-
-    },
-    900
-  );
+  saveGame();
 
 }
 
@@ -3110,41 +3475,48 @@ function updateProjectiles(
 ) {
 
   for (
-    const projectile of
-    state.projectiles
+    let i =
+      state.projectiles.length -
+      1;
+
+    i >= 0;
+
+    i--
   ) {
 
-    if (
-      projectile.dead
-    ) {
-      continue;
-    }
+    const projectile =
+      state.projectiles[i];
 
 
     projectile.velocity.y -=
-      9.8 *
+      8 *
       dt;
 
 
-    projectile.mesh.position
-      .addScaledVector(
-        projectile.velocity,
-        dt
-      );
+    projectile.model.position.addScaledVector(
+
+      projectile.velocity,
+
+      dt
+
+    );
 
 
-    projectile.mesh.rotation.x +=
+    projectile.model.rotation.x +=
       dt *
-      8;
+      7;
 
-
-    projectile.mesh.rotation.z +=
+    projectile.model.rotation.y +=
       dt *
-      5;
+      9;
 
 
     projectile.life -=
       dt;
+
+
+    let hitCreature =
+      null;
 
 
     for (
@@ -3153,31 +3525,29 @@ function updateProjectiles(
     ) {
 
       if (
-        !creature.alive ||
-        !creature.model.visible
+        creature.dead ||
+        creature.captured
       ) {
+
         continue;
+
       }
 
 
-      if (
-        projectile.mesh
-          .position
+      const distance =
+        projectile.model.position
           .distanceTo(
             creature.model.position
-          )
-        <
-        (
-          creature.boss
-            ? 2.5
-            : 1.5
-        )
+          );
+
+
+      if (
+        distance <
+        1.35
       ) {
 
-        resolveCapture(
-          creature,
-          projectile
-        );
+        hitCreature =
+          creature;
 
         break;
 
@@ -3187,56 +3557,264 @@ function updateProjectiles(
 
 
     if (
-      projectile.life <=
-      0 ||
-      projectile.mesh
-        .position
-        .y <
-      0.08
+      hitCreature
     ) {
 
-      projectile.dead =
-        true;
+      attemptCapture(
+
+        hitCreature,
+
+        projectile.sphereIndex
+
+      );
+
+
+      world.remove(
+        projectile.model
+      );
+
+
+      state.projectiles.splice(
+        i,
+        1
+      );
+
+
+      continue;
+
+    }
+
+
+    if (
+      projectile.model.position.y <
+      0 ||
+      projectile.life <=
+      0
+    ) {
+
+      world.remove(
+        projectile.model
+      );
+
+
+      state.projectiles.splice(
+        i,
+        1
+      );
 
     }
 
   }
 
+}
 
-  state.projectiles =
-    state.projectiles.filter(
-      projectile => {
 
-        if (
-          projectile.dead
-        ) {
+/* =========================================================
+   CAPTURE
+========================================================= */
 
-          scene.remove(
-            projectile.mesh
-          );
+function attemptCapture(
+  creature,
+  sphereIndex
+) {
 
-          return false;
+  const sphere =
+    SPHERES[
+      sphereIndex
+    ];
 
-        }
 
-        return true;
+  const original =
+    state.save.selectedSphere;
 
-      }
+
+  state.save.selectedSphere =
+    sphereIndex;
+
+
+  const chance =
+    captureChance(
+      creature
     );
+
+
+  state.save.selectedSphere =
+    original;
+
+
+  if (
+    Math.random() <=
+    chance
+  ) {
+
+    creature.captured =
+      true;
+
+
+    world.remove(
+      creature.model
+    );
+
+
+    const entry = {
+
+      id:
+        creature.definition.id,
+
+      name:
+        creature.definition.name,
+
+      level:
+        creature.level
+
+    };
+
+
+    if (
+      state.save.party.length <
+      5
+    ) {
+
+      state.save.party.push(
+        entry
+      );
+
+
+      msg(
+        `${creature.definition.name} captured with ${sphere.name} and joined your party!`
+      );
+
+    } else {
+
+      state.save.box.push(
+        entry
+      );
+
+
+      msg(
+        `${creature.definition.name} captured and sent to storage`
+      );
+
+    }
+
+
+    saveGame();
+
+  } else {
+
+    msg(
+      `${creature.definition.name} escaped the ${sphere.name}`
+    );
+
+  }
 
 }
 
 
 /* =========================================================
-   SUMMON
+   PLAYER ATTACK
+========================================================= */
+
+function attackTarget() {
+
+  const target =
+    state.target;
+
+
+  if (
+    !target ||
+    target.dead ||
+    target.captured
+  ) {
+
+    return;
+
+  }
+
+
+  const distance =
+    state.player.model.position
+      .distanceTo(
+        target.model.position
+      );
+
+
+  if (
+    distance >
+    7
+  ) {
+
+    return;
+
+  }
+
+
+  const damage =
+    rand(
+      14,
+      24
+    );
+
+
+  target.hp =
+    Math.max(
+      0,
+      target.hp -
+      damage
+    );
+
+
+  play(
+    target,
+    "hurt"
+  );
+
+
+  if (
+    target.hp <=
+    0
+  ) {
+
+    target.dead =
+      true;
+
+
+    world.remove(
+      target.model
+    );
+
+
+    msg(
+      `${target.definition.name} defeated`
+    );
+
+
+    state.save.xp +=
+      20 *
+      target.definition.rarity;
+
+  }
+
+}
+
+
+/* =========================================================
+   COMPANION
 ========================================================= */
 
 function summonCompanion() {
 
   if (
-    state.mounted
+    !state.save.party.length
   ) {
+
+    msg(
+      "Capture a Pal first"
+    );
+
+
     return;
+
   }
 
 
@@ -3254,7 +3832,7 @@ function summonCompanion() {
 
 
     msg(
-      "Companion recalled"
+      "Companion returned"
     );
 
 
@@ -3263,112 +3841,68 @@ function summonCompanion() {
   }
 
 
-  const id =
+  const partyEntry =
     state.save.party[0];
 
 
   const definition =
     PAL_LIBRARY.find(
-      definition =>
-        definition.id ===
-        id
-    );
 
+      item =>
+        item.id ===
+        partyEntry.id
 
-  const cached =
-    definition &&
-    state.cache.get(
-      definition.id
     );
 
 
   if (
     !definition ||
-    !cached
+    !state.cache.has(
+      definition.id
+    )
   ) {
 
     msg(
-      "Capture a Pal first"
+      "That Pal is still loading"
     );
+
 
     return;
 
   }
 
 
-  const model =
-    cloneAsset(
-      cached
+  const companion =
+    spawnCreature(
+
+      definition,
+
+      state.player.model.position
+        .clone()
+        .add(
+          new THREE.Vector3(
+            2,
+            0,
+            2
+          )
+        )
+
     );
 
 
-  model.position.set(
-    state.player.x +
-    2,
+  if (
+    companion
+  ) {
 
-    definition.mount ===
-    "flying"
-      ? 2
-      : 0,
-
-    state.player.z +
-    2
-  );
+    state.companion =
+      companion;
 
 
-  world.add(
-    model
-  );
+    msg(
+      `${definition.name} summoned`
+    );
 
-
-  const companion = {
-
-    def:
-      definition,
-
-    model,
-
-    clips:
-      cached.clips ||
-      [],
-
-    mixer:
-      null,
-
-    currentAction:
-      null,
-
-    animMode:
-      "",
-
-    alive:
-      true
-
-  };
-
-
-  makeMixer(
-    companion,
-    companion.clips
-  );
-
-
-  play(
-    companion,
-    definition.mount ===
-    "flying"
-      ? "fly"
-      : "idle"
-  );
-
-
-  state.companion =
-    companion;
-
-
-  msg(
-    `${definition.name} summoned`
-  );
+  }
 
 }
 
@@ -3379,17 +3913,50 @@ function summonCompanion() {
 
 function toggleMount() {
 
-  const companion =
-    state.companion;
+  if (
+    state.mounted
+  ) {
+
+    state.mounted =
+      false;
+
+
+    state.player.model.visible =
+      true;
+
+
+    msg(
+      "Dismounted"
+    );
+
+
+    return;
+
+  }
 
 
   if (
-    !companion?.def.mount
+    !state.companion
   ) {
 
     msg(
       "Summon a mountable Pal first"
     );
+
+
+    return;
+
+  }
+
+
+  if (
+    !state.companion.definition.mount
+  ) {
+
+    msg(
+      `${state.companion.definition.name} cannot be mounted`
+    );
+
 
     return;
 
@@ -3397,277 +3964,36 @@ function toggleMount() {
 
 
   state.mounted =
-    !state.mounted;
+    true;
 
 
   state.player.model.visible =
-    !state.mounted;
+    false;
 
 
   msg(
-    state.mounted
-      ? `Mounted ${companion.def.name}`
-      : `Dismounted ${companion.def.name}`
+    `Mounted ${state.companion.definition.name}`
   );
 
 }
 
 
 /* =========================================================
-   COMPANION
+   WILD AI
 ========================================================= */
 
-function updateCompanion(
-  dt,
-  forward,
-  right,
-  sprint
+function updateWildAI(
+  dt
 ) {
 
-  const companion =
-    state.companion;
-
-
   if (
-    !companion
+    !state.player
   ) {
-    return;
-  }
-
-
-  if (
-    state.mounted
-  ) {
-
-    const speed =
-      companion.def.mount ===
-      "flying"
-        ? 11
-        : (
-            sprint
-              ? 10
-              : 7
-          );
-
-
-    const sin =
-      Math.sin(
-        state.player.yaw
-      );
-
-
-    const cos =
-      Math.cos(
-        state.player.yaw
-      );
-
-
-    companion.model.position.x +=
-      (
-        -sin *
-        forward
-        +
-        cos *
-        right
-      ) *
-      speed *
-      dt;
-
-
-    companion.model.position.z +=
-      (
-        -cos *
-        forward
-        -
-        sin *
-        right
-      ) *
-      speed *
-      dt;
-
-
-    if (
-      companion.def.mount ===
-      "flying"
-    ) {
-
-      if (
-        state.keys.has(
-          "Space"
-        )
-      ) {
-
-        companion.model.position.y +=
-          6 *
-          dt;
-
-      }
-
-
-      if (
-        state.keys.has(
-          "ControlLeft"
-        )
-      ) {
-
-        companion.model.position.y -=
-          6 *
-          dt;
-
-      }
-
-
-      companion.model.position.y =
-        clamp(
-          companion.model.position.y,
-          0.2,
-          35
-        );
-
-
-      play(
-        companion,
-        "fly"
-      );
-
-    } else {
-
-      companion.model.position.y =
-        0;
-
-
-      play(
-        companion,
-        (
-          forward ||
-          right
-        )
-          ? (
-              sprint
-                ? "run"
-                : "walk"
-            )
-          : "idle"
-      );
-
-    }
-
-
-    companion.model.rotation.y =
-      state.player.yaw;
-
-
-    state.player.x =
-      companion.model.position.x;
-
-
-    state.player.y =
-      companion.model.position.y;
-
-
-    state.player.z =
-      companion.model.position.z;
-
 
     return;
 
   }
 
-
-  const targetX =
-    state.player.x +
-    Math.cos(
-      state.player.yaw
-    ) *
-    2.6;
-
-
-  const targetZ =
-    state.player.z -
-    Math.sin(
-      state.player.yaw
-    ) *
-    2.6;
-
-
-  const dx =
-    targetX -
-    companion.model.position.x;
-
-
-  const dz =
-    targetZ -
-    companion.model.position.z;
-
-
-  const distance =
-    Math.hypot(
-      dx,
-      dz
-    );
-
-
-  if (
-    distance >
-    1.5
-  ) {
-
-    companion.model.position.x +=
-      dx *
-      Math.min(
-        1,
-        dt *
-        3.2
-      );
-
-
-    companion.model.position.z +=
-      dz *
-      Math.min(
-        1,
-        dt *
-        3.2
-      );
-
-
-    companion.model.rotation.y =
-      Math.atan2(
-        dx,
-        dz
-      );
-
-
-    play(
-      companion,
-      companion.def.mount ===
-      "flying"
-        ? "fly"
-        : "run"
-    );
-
-  } else {
-
-    play(
-      companion,
-      companion.def.mount ===
-      "flying"
-        ? "fly"
-        : "idle"
-    );
-
-  }
-
-}
-
-
-/* =========================================================
-   WILD PAL AI
-========================================================= */
-
-function updateWild(
-  dt,
-  now
-) {
 
   for (
     const creature of
@@ -3675,194 +4001,230 @@ function updateWild(
   ) {
 
     if (
-      !creature.alive ||
-      !creature.model.visible
+      creature.dead ||
+      creature.captured ||
+      creature ===
+      state.companion
     ) {
+
       continue;
+
     }
 
 
-    const dx =
-      state.player.x -
-      creature.x;
-
-
-    const dz =
-      state.player.z -
-      creature.z;
-
-
-    const distance =
-      Math.hypot(
-        dx,
-        dz
-      );
+    creature.wanderTimer -=
+      dt;
 
 
     if (
-      creature.aggressive &&
-      distance <
-      28
+      creature.wanderTimer <=
+      0
     ) {
 
-      creature.direction =
-        Math.atan2(
-          dx,
-          dz
+      creature.wanderTimer =
+        rand(
+          1.5,
+          4.5
         );
 
 
-      const speed =
-        creature.def.speed *
-        (
-          creature.boss
-            ? 1.05
-            : 0.85
+      creature.wanderAngle +=
+        rand(
+          -1.2,
+          1.2
         );
-
-
-      creature.x +=
-        Math.sin(
-          creature.direction
-        ) *
-        speed *
-        dt;
-
-
-      creature.z +=
-        Math.cos(
-          creature.direction
-        ) *
-        speed *
-        dt;
-
-
-      play(
-        creature,
-        creature.def.mount ===
-        "flying"
-          ? "fly"
-          : "run"
-      );
-
-
-      if (
-        distance <
-        2.6 &&
-        Math.random() <
-        dt *
-        0.65
-      ) {
-
-        state.player.hp =
-          Math.max(
-            0,
-            state.player.hp -
-            (
-              creature.boss
-                ? 16
-                : 6
-            )
-          );
-
-
-        play(
-          creature,
-          "attack"
-        );
-
-
-        msg(
-          `${creature.def.name} hit you`
-        );
-
-      }
-
-    } else {
-
-      if (
-        now >
-        creature.changeAt
-      ) {
-
-        creature.direction +=
-          rand(
-            -1.3,
-            1.3
-          );
-
-
-        creature.changeAt =
-          now +
-          rand(
-            1600,
-            3800
-          );
-
-      }
-
-
-      const speed =
-        creature.def.speed *
-        0.16;
-
-
-      creature.x +=
-        Math.sin(
-          creature.direction
-        ) *
-        speed *
-        dt;
-
-
-      creature.z +=
-        Math.cos(
-          creature.direction
-        ) *
-        speed *
-        dt;
-
-
-      play(
-        creature,
-        creature.def.mount ===
-        "flying"
-          ? "fly"
-          : "walk"
-      );
 
     }
 
 
-    creature.model.position.x =
-      creature.x;
+    const speed =
+      creature.definition.speed *
+      0.25;
 
 
-    creature.model.position.z =
-      creature.z;
+    creature.model.position.x +=
+
+      Math.sin(
+        creature.wanderAngle
+      ) *
+
+      speed *
+
+      dt;
+
+
+    creature.model.position.z +=
+
+      Math.cos(
+        creature.wanderAngle
+      ) *
+
+      speed *
+
+      dt;
 
 
     creature.model.rotation.y =
-      creature.direction;
+      creature.wanderAngle;
+
+
+    play(
+
+      creature,
+
+      creature.definition.mount ===
+      "flying"
+        ? "fly"
+        : "walk"
+
+    );
 
 
     if (
-      creature.def.mount ===
+      creature.definition.mount ===
       "flying"
     ) {
 
       creature.model.position.y =
-        creature.boss
-          ? 7
-          : 2.2 +
-            Math.sin(
-              now *
-              0.0015 +
-              creature.bobSeed
-            ) *
-            0.4;
+        2.4 +
+        Math.sin(
+          performance.now() *
+          0.002
+        ) *
+        0.5;
+
+    } else {
+
+      creature.model.position.y =
+        0;
 
     }
+
+  }
+
+}
+
+
+/* =========================================================
+   COMPANION FOLLOW
+========================================================= */
+
+function updateCompanion(
+  dt
+) {
+
+  if (
+    !state.companion ||
+    !state.player
+  ) {
+
+    return;
+
+  }
+
+
+  const companion =
+    state.companion;
+
+
+  if (
+    state.mounted
+  ) {
+
+    companion.model.position.set(
+
+      state.player.x,
+      companion.definition.mount ===
+      "flying"
+        ? 2.4
+        : 0,
+      state.player.z
+
+    );
+
+
+    companion.model.rotation.y =
+      state.player.yaw;
+
+
+    play(
+
+      companion,
+
+      companion.definition.mount ===
+      "flying"
+        ? "fly"
+        : "run"
+
+    );
+
+
+    return;
+
+  }
+
+
+  const desired =
+    state.player.model.position
+      .clone()
+      .add(
+        new THREE.Vector3(
+          2,
+          0,
+          2
+        )
+      );
+
+
+  const direction =
+    desired.sub(
+      companion.model.position
+    );
+
+
+  const distance =
+    direction.length();
+
+
+  if (
+    distance >
+    1.6
+  ) {
+
+    direction.normalize();
+
+
+    companion.model.position.addScaledVector(
+
+      direction,
+
+      Math.min(
+        companion.definition.speed,
+        5
+      ) *
+      dt
+
+    );
+
+
+    companion.model.rotation.y =
+      Math.atan2(
+        direction.x,
+        direction.z
+      );
+
+
+    play(
+      companion,
+      "run"
+    );
+
+  } else {
+
+    play(
+      companion,
+      "idle"
+    );
 
   }
 
@@ -3873,159 +4235,233 @@ function updateWild(
    HUD
 ========================================================= */
 
+const targetCard =
+  $("#targetCard");
+
+const targetName =
+  $("#targetName");
+
+const targetMeta =
+  $("#targetMeta");
+
+const captureChanceText =
+  $("#captureChance");
+
+const targetHpBar =
+  $("#targetHpBar");
+
+const hpBar =
+  $("#hpBar");
+
+const hpText =
+  $("#hpText");
+
+const staminaBar =
+  $("#staminaBar");
+
+const staminaText =
+  $("#staminaText");
+
+const foodBar =
+  $("#foodBar");
+
+const foodText =
+  $("#foodText");
+
+const partyHud =
+  $("#partyHud");
+
+const feed =
+  $("#feed");
+
+const sphereHud =
+  $("#sphereHud") ||
+  $("#orbHud");
+
+const clockText =
+  $("#clockText");
+
+const levelText =
+  $("#levelText");
+
+
 function updateHUD() {
 
-  const setBar =
-    (
-      id,
-      value
-    ) => {
-
-      const element =
-        $(id);
-
-      if (
-        element
-      ) {
-
-        element.style.width =
-          `${clamp(
-            value,
-            0,
-            100
-          )}%`;
-
-      }
-
-    };
-
-
-  setBar(
-    "#hpBar",
-    state.player.hp
-  );
-
-
-  setBar(
-    "#staminaBar",
-    state.player.stamina
-  );
-
-
-  setBar(
-    "#foodBar",
-    state.player.hunger
-  );
+  const player =
+    state.player;
 
 
   if (
-    $("#hpText")
+    !player
   ) {
 
-    $("#hpText").textContent =
+    return;
+
+  }
+
+
+  if (
+    hpBar
+  ) {
+
+    hpBar.style.width =
+      `${clamp(
+        player.hp,
+        0,
+        100
+      )}%`;
+
+  }
+
+
+  if (
+    hpText
+  ) {
+
+    hpText.textContent =
       Math.round(
-        state.player.hp
+        player.hp
       );
 
   }
 
 
   if (
-    $("#staminaText")
+    staminaBar
   ) {
 
-    $("#staminaText").textContent =
+    staminaBar.style.width =
+      `${clamp(
+        player.stamina,
+        0,
+        100
+      )}%`;
+
+  }
+
+
+  if (
+    staminaText
+  ) {
+
+    staminaText.textContent =
       Math.round(
-        state.player.stamina
+        player.stamina
       );
 
   }
 
 
   if (
-    $("#foodText")
+    foodBar
   ) {
 
-    $("#foodText").textContent =
+    foodBar.style.width =
+      `${clamp(
+        player.hunger,
+        0,
+        100
+      )}%`;
+
+  }
+
+
+  if (
+    foodText
+  ) {
+
+    foodText.textContent =
       Math.round(
-        state.player.hunger
+        player.hunger
       );
 
   }
 
 
-  const card =
-    $("#targetCard");
+  if (
+    levelText
+  ) {
+
+    levelText.textContent =
+      `LEVEL ${state.save.level}`;
+
+  }
 
 
   if (
-    card
+    clockText
+  ) {
+
+    const hour =
+      Math.floor(
+        state.worldTime
+      ) %
+      24;
+
+
+    const minute =
+      Math.floor(
+
+        (
+          state.worldTime -
+          Math.floor(
+            state.worldTime
+          )
+        ) *
+        60
+
+      );
+
+
+    clockText.textContent =
+      `DAY 1 • ${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+
+  }
+
+
+  if (
+    targetCard
   ) {
 
     if (
-      state.target?.alive
+      state.target &&
+      !state.target.dead &&
+      !state.target.captured
     ) {
 
-      card.hidden =
+      targetCard.hidden =
         false;
 
 
-      if (
-        $("#targetName")
-      ) {
-
-        $("#targetName").textContent =
-          state.target.def.name +
-          (
-            state.target.boss
-              ? " • BOSS"
-              : ""
-          );
-
-      }
+      targetName.textContent =
+        state.target.definition.name;
 
 
-      if (
-        $("#targetMeta")
-      ) {
-
-        $("#targetMeta").textContent =
-          `LV ${state.target.level} • ${state.target.def.element}`;
-
-      }
+      targetMeta.textContent =
+        `LV ${state.target.level} • ${state.target.definition.element}`;
 
 
-      if (
-        $("#captureChance")
-      ) {
-
-        $("#captureChance").textContent =
-          `${Math.round(
-            captureChance(
-              state.target
-            ) *
-            100
-          )}%`;
-
-      }
+      captureChanceText.textContent =
+        `${Math.round(
+          captureChance(
+            state.target
+          ) *
+          100
+        )}%`;
 
 
-      if (
-        $("#targetHpBar")
-      ) {
-
-        $("#targetHpBar")
-          .style
-          .width =
-          `${100 *
+      targetHpBar.style.width =
+        `${clamp(
           state.target.hp /
-          state.target.maxHp}%`;
-
-      }
+          state.target.maxHp *
+          100,
+          0,
+          100
+        )}%`;
 
     } else {
 
-      card.hidden =
+      targetCard.hidden =
         true;
 
     }
@@ -4034,108 +4470,69 @@ function updateHUD() {
 
 
   if (
-    $("#feed")
+    feed
   ) {
 
-    $("#feed").innerHTML =
+    const now =
+      performance.now();
+
+
+    state.feed =
+      state.feed.filter(
+
+        item =>
+          now -
+          item.time <
+          5500
+
+      );
+
+
+    feed.innerHTML =
       state.feed
-        .filter(
-          item =>
-            performance.now() -
-            item.time <
-            5200
-        )
         .map(
+
           item =>
             `<div>${item.text}</div>`
+
         )
         .join("");
 
   }
 
 
-  const sphereHud =
-    $("#sphereHud") ||
-    $("#orbHud");
-
-
   if (
-    sphereHud
+    partyHud
   ) {
 
-    sphereHud.innerHTML =
-      SPHERES.map(
-        (
-          sphere,
-          index
-        ) => `
-
-          <div class="orb-slot ${
-            index ===
-            state.save.selectedSphere
-              ? "active"
-              : ""
-          }">
-
-            <strong>
-              ${index + 1}
-            </strong>
-
-            <span>
-              ${sphere.name}
-            </span>
-
-            <small>
-              x${
-                state.save.spheres[index] ||
-                0
-              }
-            </small>
-
-          </div>
-
-        `
-      ).join("");
-
-  }
-
-
-  if (
-    $("#partyHud")
-  ) {
-
-    $("#partyHud").innerHTML =
+    partyHud.innerHTML =
       state.save.party
-        .slice(
-          0,
-          5
-        )
         .map(
-          id => {
+
+          pal => {
 
             const definition =
               PAL_LIBRARY.find(
-                definition =>
-                  definition.id ===
-                  id
+
+                item =>
+                  item.id ===
+                  pal.id
+
               );
 
-            if (
-              !definition
-            ) {
-              return "";
-            }
 
             return `
 
               <div class="party-card">
 
                 <strong>
-                  ${definition.name}
+                  ${pal.name}
                 </strong>
 
                 <span>
-                  ${definition.element}
+                  LV ${pal.level}
+                  •
+                  ${definition?.element || "Neutral"}
                 </span>
 
               </div>
@@ -4143,6 +4540,53 @@ function updateHUD() {
             `;
 
           }
+
+        )
+        .join("");
+
+  }
+
+
+  if (
+    sphereHud
+  ) {
+
+    sphereHud.innerHTML =
+      SPHERES
+        .map(
+
+          (
+            sphere,
+            index
+          ) => {
+
+            const active =
+              index ===
+              state.save.selectedSphere;
+
+
+            return `
+
+              <div class="orb-slot ${active ? "active" : ""}">
+
+                <strong>
+                  ${index + 1}
+                </strong>
+
+                <span>
+                  ${sphere.name}
+                </span>
+
+                <small>
+                  ×${state.save.spheres[index]}
+                </small>
+
+              </div>
+
+            `;
+
+          }
+
         )
         .join("");
 
@@ -4156,14 +4600,19 @@ function updateHUD() {
 ========================================================= */
 
 canvas.addEventListener(
+
   "click",
+
   () =>
     canvas.requestPointerLock?.()
+
 );
 
 
 document.addEventListener(
+
   "mousemove",
+
   event => {
 
     if (
@@ -4171,28 +4620,41 @@ document.addEventListener(
       canvas ||
       !state.player
     ) {
+
       return;
+
     }
 
+
     state.player.yaw -=
+
       event.movementX *
       0.0024;
 
+
     state.player.pitch =
       clamp(
+
         state.player.pitch -
+
         event.movementY *
         0.0017,
+
         -0.5,
+
         0.28
+
       );
 
   }
+
 );
 
 
 document.addEventListener(
+
   "keydown",
+
   event => {
 
     state.keys.add(
@@ -4208,6 +4670,7 @@ document.addEventListener(
     ) {
 
       state.save.selectedSphere =
+
         Number(
           event.code.slice(
             -1
@@ -4251,16 +4714,20 @@ document.addEventListener(
     }
 
   }
+
 );
 
 
 document.addEventListener(
+
   "keyup",
+
   event => {
 
     state.keys.delete(
       event.code
     );
+
 
     if (
       event.code ===
@@ -4272,11 +4739,14 @@ document.addEventListener(
     }
 
   }
+
 );
 
 
 document.addEventListener(
+
   "mousedown",
+
   event => {
 
     if (
@@ -4291,6 +4761,7 @@ document.addEventListener(
     }
 
   }
+
 );
 
 
@@ -4304,74 +4775,99 @@ const menu =
 
 $("#menuButton")
   ?.addEventListener(
+
     "click",
+
     () => {
 
-      if (
-        menu
-      ) {
-
-        menu.hidden =
-          !menu.hidden;
-
-      }
+      menu.hidden =
+        !menu.hidden;
 
     }
+
   );
 
 
 $("#resumeButton")
   ?.addEventListener(
+
     "click",
+
     () => {
 
-      if (
-        menu
-      ) {
+      menu.hidden =
+        true;
 
-        menu.hidden =
-          true;
-
-      }
 
       canvas.requestPointerLock?.();
 
     }
+
   );
 
 
 $("#resetButton")
   ?.addEventListener(
+
     "click",
+
     () => {
 
       localStorage.removeItem(
         SAVE_KEY
       );
 
+
+      localStorage.removeItem(
+        CHARACTER_SAVE_KEY
+      );
+
+
       location.reload();
 
     }
+
   );
 
 
 /* =========================================================
-   START
+   STARTUP TIMEOUT
 ========================================================= */
 
-await loadPlayer();
-
-
-await loadHyperSphere();
-
-
-const loaded =
-  await loadPals();
-
-
-if (
-  !loaded
+function timeoutPromise(
+  milliseconds
 ) {
+
+  return new Promise(
+
+    resolve => {
+
+      setTimeout(
+
+        () =>
+          resolve(
+            "timeout"
+          ),
+
+        milliseconds
+
+      );
+
+    }
+
+  );
+
+}
+
+
+/* =========================================================
+   START GAME FAST
+
+   Player + Sphere + starter Pals load together.
+   Maximum wait before game opens = 25 seconds.
+========================================================= */
+
+async function startGame() {
 
   if (
     loading
@@ -4386,11 +4882,11 @@ if (
         </div>
 
         <h1>
-          NO PAL MODEL FOUND
+          GALAXY PALS
         </h1>
 
-        <p>
-          Put extracted GLB, FBX, OBJ or STL files inside assets/pals
+        <p id="loadingText">
+          Preparing your adventure...
         </p>
 
       </div>
@@ -4399,7 +4895,111 @@ if (
 
   }
 
-} else {
+
+  const loadingText =
+    $("#loadingText");
+
+
+  if (
+    loadingText
+  ) {
+
+    loadingText.textContent =
+      "Loading explorer and nearby Pals...";
+
+  }
+
+
+  const criticalLoad =
+    Promise.allSettled([
+
+      loadPlayer(),
+
+      loadHyperSphere(),
+
+      loadStarterPals()
+
+    ]);
+
+
+  await Promise.race([
+
+    criticalLoad,
+
+    timeoutPromise(
+      25000
+    )
+
+  ]);
+
+
+  if (
+    !state.player
+  ) {
+
+    const player = {
+
+      x:
+        state.save.x,
+
+      y:
+        state.save.y,
+
+      z:
+        state.save.z,
+
+      yaw: 0,
+
+      pitch:
+        -0.12,
+
+      hp:
+        state.save.hp,
+
+      stamina:
+        state.save.stamina,
+
+      hunger:
+        state.save.hunger,
+
+      speed:
+        4.8,
+
+      model:
+        customizeCharacter(
+          createFallbackPlayer()
+        ),
+
+      mixer:
+        null,
+
+      clips: [],
+
+      animMode:
+        ""
+
+    };
+
+
+    player.model.position.set(
+
+      player.x,
+      player.y,
+      player.z
+
+    );
+
+
+    world.add(
+      player.model
+    );
+
+
+    state.player =
+      player;
+
+  }
+
 
   spawnWorldPals();
 
@@ -4407,19 +5007,52 @@ if (
   loading?.remove();
 
 
+  const loadedCount =
+    state.cache.size;
+
+
   msg(
-    `Loaded ${loaded} 3D Pal model${
-      loaded === 1
-        ? ""
-        : "s"
-    }`
+
+    loadedCount
+      ? `${loadedCount} Pal model${loadedCount === 1 ? "" : "s"} ready`
+      : "World ready — Pal models are loading in the background"
+
   );
+
+
+  loadRemainingPals()
+    .then(
+      () => {
+
+        spawnWorldPals(
+          true
+        );
+
+      }
+    )
+    .catch(
+      error => {
+
+        console.warn(
+          "Background Pal loading:",
+          error
+        );
+
+      }
+    );
 
 }
 
 
 /* =========================================================
-   MAIN LOOP
+   START
+========================================================= */
+
+await startGame();
+
+
+/* =========================================================
+   MAIN GAME LOOP
 ========================================================= */
 
 let last =
@@ -4432,13 +5065,17 @@ function loop(
 
   const dt =
     clamp(
+
       (
         now -
         last
       ) /
       1000,
+
       0,
+
       0.05
+
     );
 
 
@@ -4450,200 +5087,454 @@ function loop(
     state.player;
 
 
-  const forward =
-    (
-      state.keys.has(
-        "KeyW"
-      )
-        ? 1
-        : 0
-    )
-    -
-    (
-      state.keys.has(
-        "KeyS"
-      )
-        ? 1
-        : 0
-    );
-
-
-  const right =
-    (
-      state.keys.has(
-        "KeyD"
-      )
-        ? 1
-        : 0
-    )
-    -
-    (
-      state.keys.has(
-        "KeyA"
-      )
-        ? 1
-        : 0
-    );
-
-
-  const sprint =
-    state.keys.has(
-      "ShiftLeft"
-    ) &&
-    player.stamina >
-    2;
-
-
   if (
-    !state.mounted
+    player
   ) {
 
-    const speed =
-      sprint
-        ? 7.5
-        : player.speed;
+    const forward =
 
-
-    const sin =
-      Math.sin(
-        player.yaw
-      );
-
-
-    const cos =
-      Math.cos(
-        player.yaw
-      );
-
-
-    player.x +=
       (
-        -sin *
-        forward
-        +
-        cos *
-        right
-      ) *
-      speed *
-      dt;
+        state.keys.has(
+          "KeyW"
+        )
+          ? 1
+          : 0
+      )
 
+      -
 
-    player.z +=
       (
-        -cos *
-        forward
-        -
-        sin *
-        right
-      ) *
-      speed *
-      dt;
-
-
-    player.x =
-      clamp(
-        player.x,
-        -170,
-        170
+        state.keys.has(
+          "KeyS"
+        )
+          ? 1
+          : 0
       );
 
 
-    player.z =
-      clamp(
-        player.z,
-        -170,
-        170
+    const right =
+
+      (
+        state.keys.has(
+          "KeyD"
+        )
+          ? 1
+          : 0
+      )
+
+      -
+
+      (
+        state.keys.has(
+          "KeyA"
+        )
+          ? 1
+          : 0
       );
 
 
-    player.y =
+    const moving =
+      forward !==
+      0 ||
+      right !==
       0;
 
 
-    player.model.position.set(
-      player.x,
-      player.y,
-      player.z
-    );
+    const sprint =
 
-
-    player.model.rotation.y =
-      player.yaw;
-
-
-    play(
-      player,
-      (
-        forward ||
-        right
+      state.keys.has(
+        "ShiftLeft"
       )
-        ? (
-            sprint
-              ? "run"
-              : "walk"
-          )
-        : "idle"
-    );
 
-  }
+      &&
+
+      player.stamina >
+      2;
 
 
-  player.stamina =
-    clamp(
-      player.stamina +
-      (
-        sprint &&
+    if (
+      !state.mounted
+    ) {
+
+      const speed =
+        sprint
+          ? 7.5
+          : player.speed;
+
+
+      const sin =
+        Math.sin(
+          player.yaw
+        );
+
+
+      const cos =
+        Math.cos(
+          player.yaw
+        );
+
+
+      player.x +=
+
         (
-          forward ||
+          -sin *
+          forward
+
+          +
+
+          cos *
           right
         )
-          ? -18
-          : 13
-      ) *
-      dt,
-      0,
-      100
-    );
+
+        *
+
+        speed
+
+        *
+
+        dt;
 
 
-  player.hunger =
-    clamp(
-      player.hunger -
-      0.12 *
-      dt,
-      0,
-      100
-    );
+      player.z +=
+
+        (
+          -cos *
+          forward
+
+          -
+
+          sin *
+          right
+        )
+
+        *
+
+        speed
+
+        *
+
+        dt;
 
 
-  if (
-    player.hunger <
-    8
-  ) {
+      player.x =
+        clamp(
+          player.x,
+          -170,
+          170
+        );
 
-    player.hp =
-      Math.max(
-        0,
-        player.hp -
-        0.45 *
-        dt
+
+      player.z =
+        clamp(
+          player.z,
+          -170,
+          170
+        );
+
+
+      player.model.position.set(
+
+        player.x,
+        player.y,
+        player.z
+
       );
+
+
+      player.model.rotation.y =
+        player.yaw;
+
+
+      if (
+        moving
+      ) {
+
+        play(
+          player,
+          sprint
+            ? "run"
+            : "walk"
+        );
+
+      } else {
+
+        play(
+          player,
+          "idle"
+        );
+
+      }
+
+    } else {
+
+      const mount =
+        state.companion;
+
+
+      const speed =
+
+        mount?.definition.mount ===
+        "flying"
+
+          ? 11
+
+          : 8.5;
+
+
+      const sin =
+        Math.sin(
+          player.yaw
+        );
+
+
+      const cos =
+        Math.cos(
+          player.yaw
+        );
+
+
+      player.x +=
+
+        (
+          -sin *
+          forward
+
+          +
+
+          cos *
+          right
+        )
+
+        *
+
+        speed
+
+        *
+
+        dt;
+
+
+      player.z +=
+
+        (
+          -cos *
+          forward
+
+          -
+
+          sin *
+          right
+        )
+
+        *
+
+        speed
+
+        *
+
+        dt;
+
+
+      player.x =
+        clamp(
+          player.x,
+          -170,
+          170
+        );
+
+
+      player.z =
+        clamp(
+          player.z,
+          -170,
+          170
+        );
+
+    }
+
+
+    if (
+      sprint &&
+      moving
+    ) {
+
+      player.stamina =
+        Math.max(
+
+          0,
+
+          player.stamina -
+          20 *
+          dt
+
+        );
+
+    } else {
+
+      player.stamina =
+        Math.min(
+
+          100,
+
+          player.stamina +
+          12 *
+          dt
+
+        );
+
+    }
+
+
+    player.hunger =
+      Math.max(
+
+        0,
+
+        player.hunger -
+        0.18 *
+        dt
+
+      );
+
+
+    state.worldTime +=
+
+      dt *
+      0.22;
+
+
+    if (
+      state.worldTime >=
+      24
+    ) {
+
+      state.worldTime -=
+        24;
+
+    }
+
+
+    const cameraDistance =
+      state.mounted
+        ? 8
+        : 5.8;
+
+
+    const cameraHeight =
+      state.mounted
+        ? 4
+        : 3.2;
+
+
+    const targetPosition =
+      new THREE.Vector3(
+
+        player.x,
+
+        (
+          state.mounted &&
+          state.companion?.definition.mount ===
+          "flying"
+        )
+          ? 3
+          : 1.2,
+
+        player.z
+
+      );
+
+
+    const cameraOffset =
+      new THREE.Vector3(
+
+        Math.sin(
+          player.yaw
+        ) *
+        cameraDistance,
+
+        cameraHeight +
+        player.pitch *
+        5,
+
+        Math.cos(
+          player.yaw
+        ) *
+        cameraDistance
+
+      );
+
+
+    camera.position.lerp(
+
+      targetPosition
+        .clone()
+        .add(
+          cameraOffset
+        ),
+
+      1 -
+      Math.pow(
+        0.001,
+        dt
+      )
+
+    );
+
+
+    camera.lookAt(
+
+      targetPosition
+        .clone()
+        .add(
+          new THREE.Vector3(
+
+            0,
+
+            player.pitch *
+            5,
+
+            0
+
+          )
+        )
+
+    );
+
+
+    if (
+      state.heldSphere
+    ) {
+
+      const direction =
+        new THREE.Vector3();
+
+
+      camera.getWorldDirection(
+        direction
+      );
+
+
+      state.heldSphere.position.copy(
+        camera.position
+      );
+
+
+      state.heldSphere.position.add(
+        direction.multiplyScalar(
+          1.1
+        )
+      );
+
+
+      state.heldSphere.position.y -=
+        0.35;
+
+    }
 
   }
 
 
-  updateCompanion(
-    dt,
-    forward,
-    right,
-    sprint
-  );
-
-
-  updateWild(
-    dt,
-    now
-  );
+  updateTarget();
 
 
   updateProjectiles(
@@ -4651,178 +5542,26 @@ function loop(
   );
 
 
-  findTarget();
-
-
-  updateHeldSphere();
-
-
-  state.mixers.forEach(
-    mixer =>
-      mixer.update(
-        dt
-      )
+  updateWildAI(
+    dt
   );
 
 
-  const distance =
-    state.mounted
-      ? 9.5
-      : 6.7;
-
-
-  const targetY =
-    state.mounted &&
-    state.companion
-      ? state.companion
-          .model
-          .position
-          .y +
-        1.8
-      : 1.55;
-
-
-  camera.position.set(
-
-    player.x +
-    Math.sin(
-      player.yaw
-    ) *
-    distance,
-
-    player.y +
-    3.4 +
-    player.pitch *
-    3.2,
-
-    player.z +
-    Math.cos(
-      player.yaw
-    ) *
-    distance
-
+  updateCompanion(
+    dt
   );
 
 
-  camera.lookAt(
-    player.x,
-    targetY,
-    player.z
-  );
-
-
-  state.worldTime +=
-    dt *
-    0.12;
-
-
-  if (
-    state.worldTime >=
-    24
+  for (
+    const mixer of
+    state.mixers
   ) {
 
-    state.worldTime -=
-      24;
-
-  }
-
-
-  const daylight =
-    clamp(
-      Math.sin(
-        (
-          state.worldTime -
-          6
-        ) /
-        24 *
-        Math.PI *
-        2
-      ) *
-      0.5 +
-      0.55,
-      0.14,
-      1
+    mixer.update(
+      dt
     );
 
-
-  sun.intensity =
-    0.35 +
-    daylight *
-    2;
-
-
-  hemi.intensity =
-    0.28 +
-    daylight *
-    1.2;
-
-
-  sun.position.set(
-
-    Math.sin(
-      state.worldTime /
-      24 *
-      Math.PI *
-      2
-    ) *
-    70,
-
-    18 +
-    daylight *
-    60,
-
-    Math.cos(
-      state.worldTime /
-      24 *
-      Math.PI *
-      2
-    ) *
-    70
-
-  );
-
-
-  if (
-    $("#clockText")
-  ) {
-
-    $("#clockText").textContent =
-      `DAY 1 • ${
-        String(
-          Math.floor(
-            state.worldTime
-          )
-        )
-          .padStart(
-            2,
-            "0"
-          )
-      }:${
-        String(
-          Math.floor(
-            (
-              state.worldTime %
-              1
-            ) *
-            60
-          )
-        )
-          .padStart(
-            2,
-            "0"
-          )
-      }`;
-
   }
-
-
-  updateHUD();
-
-
-  renderer.render(
-    scene,
-    camera
-  );
 
 
   if (
@@ -4838,6 +5577,15 @@ function loop(
       now;
 
   }
+
+
+  updateHUD();
+
+
+  renderer.render(
+    scene,
+    camera
+  );
 
 
   requestAnimationFrame(
