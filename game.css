@@ -1,26 +1,11 @@
-/* =========================================================
-   GALAXY PALS - FULL GAME CSS
-========================================================= */
-
 :root {
-  --bg: #07111f;
-  --panel: rgba(10, 20, 32, 0.88);
-  --panel-strong: rgba(8, 16, 28, 0.96);
-  --line: rgba(255, 255, 255, 0.14);
-  --text: #ffffff;
-  --muted: rgba(255, 255, 255, 0.68);
-  --accent: #4da6ff;
-  --accent-2: #77c8ff;
-  --danger: #ff5b68;
-  --stamina: #5fd486;
-  --food: #f3bf56;
-  --shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+  --navy: #122a39;
+  --blue: #428da7;
+  --mint: #8ce0bc;
+  --gold: #ffe5a3;
+  --panel: #163747;
+  --border: #87bdd1;
 }
-
-
-/* =========================================================
-   RESET
-========================================================= */
 
 * {
   box-sizing: border-box;
@@ -32,858 +17,448 @@ body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
 }
 
-button,
-input,
-select {
-  font: inherit;
-}
-
-button {
-  color: inherit;
-}
-
-
-/* =========================================================
-   GAME SHELL
-========================================================= */
-
-#gameShell {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background:
-    radial-gradient(
-      circle at 50% 20%,
-      rgba(75, 156, 220, 0.18),
-      transparent 40%
-    ),
-    #07111f;
-}
-
-
-/* =========================================================
-   CANVAS
-========================================================= */
-
-#gameCanvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  outline: none;
-  cursor: crosshair;
-  touch-action: none;
-}
-
-
-/* =========================================================
-   GLOBAL HUD
-========================================================= */
-
-.hud {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.hud * {
-  pointer-events: none;
-}
-
-
-/* =========================================================
-   TOP BAR
-========================================================= */
-
-.top-hud {
-  position: absolute;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-}
-
-.hud-pill {
-  min-width: 120px;
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: rgba(6, 14, 24, 0.72);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
-  text-align: center;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-#zoneName {
-  color: #ffffff;
-}
-
-#clockText {
-  color: #dff4ff;
-}
-
-#levelText {
-  color: #ffe3a5;
-}
-
-
-/* =========================================================
-   CROSSHAIR
-========================================================= */
-
-#crosshair,
-.crosshair {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 22px;
-  height: 22px;
-  transform: translate(-50%, -50%);
-  opacity: 0.92;
-}
-
-#crosshair::before,
-#crosshair::after,
-.crosshair::before,
-.crosshair::after {
-  content: "";
-  position: absolute;
-  background: #ffffff;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.45);
-}
-
-#crosshair::before,
-.crosshair::before {
-  width: 2px;
-  height: 18px;
-  left: 10px;
-  top: 2px;
-}
-
-#crosshair::after,
-.crosshair::after {
-  width: 18px;
-  height: 2px;
-  left: 2px;
-  top: 10px;
-}
-
-
-/* =========================================================
-   TARGET CARD
-========================================================= */
-
-#targetCard {
-  position: absolute;
-  top: 85px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(360px, calc(100vw - 32px));
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: rgba(8, 16, 27, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: var(--shadow);
-}
-
-#targetCard[hidden] {
-  display: none;
-}
-
-.target-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 6px;
-}
-
-#targetName {
-  font-size: 17px;
-  font-weight: 900;
-}
-
-#targetMeta {
-  margin-top: 2px;
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.capture-rate {
-  min-width: 64px;
-  padding: 7px 9px;
-  border-radius: 10px;
-  background: rgba(77, 166, 255, 0.14);
-  border: 1px solid rgba(77, 166, 255, 0.32);
-  text-align: center;
-}
-
-.capture-rate small {
-  display: block;
-  margin-bottom: 1px;
-  font-size: 8px;
-  color: var(--muted);
-  text-transform: uppercase;
-}
-
-#captureChance {
-  font-size: 15px;
-  font-weight: 900;
-  color: #9ed6ff;
-}
-
-.target-bar {
-  width: 100%;
-  height: 8px;
-  margin-top: 10px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-#targetHpBar {
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #ff5b68, #ff8f76);
-  transition: width 0.18s ease;
-}
-
-
-/* =========================================================
-   PLAYER STATUS
-========================================================= */
-
-.player-status {
-  position: absolute;
-  left: 18px;
-  bottom: 18px;
-  width: min(320px, calc(100vw - 36px));
-  display: grid;
-  gap: 8px;
-}
-
-.status-card {
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: rgba(7, 15, 25, 0.78);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.2);
-}
-
-.status-line {
-  display: grid;
-  grid-template-columns: 74px 1fr 36px;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-line + .status-line {
-  margin-top: 8px;
-}
-
-.status-label {
-  font-size: 10px;
-  color: var(--muted);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.status-value {
-  font-size: 11px;
-  text-align: right;
-  font-weight: 800;
-}
-
-.bar-track {
-  height: 7px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
-}
-
-.bar-fill {
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  transition: width 0.14s ease;
-}
-
-#hpBar {
-  background: linear-gradient(90deg, #ff4f5f, #ff7d7d);
-}
-
-#staminaBar {
-  background: linear-gradient(90deg, #4fc97a, #7fe8a4);
-}
-
-#foodBar {
-  background: linear-gradient(90deg, #e7a53a, #ffd16d);
-}
-
-
-/* =========================================================
-   PARTY HUD
-========================================================= */
-
-#partyHud {
-  position: absolute;
-  left: 18px;
-  top: 82px;
-  display: grid;
-  gap: 8px;
-  width: 190px;
-}
-
-.party-card {
-  padding: 9px 11px;
-  border-radius: 13px;
-  background: rgba(8, 16, 27, 0.72);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.party-card strong {
-  display: block;
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.party-card span {
-  display: block;
-  margin-top: 2px;
-  font-size: 9px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-
-/* =========================================================
-   SPHERE HUD
-========================================================= */
-
-#orbHud,
-#sphereHud {
-  position: absolute;
-  right: 18px;
-  bottom: 18px;
-  width: min(320px, calc(100vw - 36px));
-  display: grid;
-  gap: 7px;
-}
-
-.orb-slot {
-  display: grid;
-  grid-template-columns: 32px 1fr auto;
-  gap: 9px;
-  align-items: center;
-  padding: 9px 11px;
-  border-radius: 14px;
-  background: rgba(7, 15, 25, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.11);
-  backdrop-filter: blur(13px);
-  -webkit-backdrop-filter: blur(13px);
-  transition:
-    transform 0.15s ease,
-    border-color 0.15s ease,
-    background 0.15s ease;
-}
-
-.orb-slot strong {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.09);
-  font-size: 12px;
-}
-
-.orb-slot span {
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.orb-slot small {
-  font-size: 10px;
-  color: var(--muted);
-  font-weight: 800;
-}
-
-.orb-slot.active {
-  transform: translateX(-5px);
-  background: rgba(40, 103, 156, 0.52);
-  border-color: rgba(120, 201, 255, 0.65);
-  box-shadow: 0 0 0 1px rgba(95, 189, 255, 0.12) inset;
-}
-
-.orb-slot.active strong {
-  background: rgba(111, 196, 255, 0.22);
-  color: #dff5ff;
-}
-
-
-/* =========================================================
-   MESSAGE FEED
-========================================================= */
-
-#feed {
-  position: absolute;
-  right: 18px;
-  top: 82px;
-  width: min(320px, calc(100vw - 36px));
-  display: grid;
-  gap: 7px;
-  text-align: right;
-}
-
-#feed > div {
-  justify-self: end;
-  max-width: 100%;
-  padding: 9px 12px;
-  border-radius: 12px;
-  background: rgba(5, 12, 21, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  color: #f3f8ff;
-  font-size: 11px;
-  line-height: 1.35;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 9px 26px rgba(0, 0, 0, 0.16);
-}
-
-
-/* =========================================================
-   CONTROLS PANEL
-========================================================= */
-
-.controls-help,
-#controlsHelp {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  transform: translateX(-50%);
-  padding: 9px 13px;
-  border-radius: 999px;
-  background: rgba(5, 12, 21, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 10px;
-  font-weight: 700;
-  text-align: center;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  white-space: nowrap;
-}
-
-
-/* =========================================================
-   MENU BUTTON
-========================================================= */
-
-#menuButton {
-  position: absolute;
-  right: 18px;
-  top: 18px;
-  z-index: 40;
-  min-width: 44px;
-  height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 13px;
-  background: rgba(7, 15, 25, 0.78);
+body {
+  background: #98d4f4;
   color: white;
-  cursor: pointer;
-  pointer-events: auto;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
-  font-weight: 900;
+  font-family: Arial, Helvetica, sans-serif;
+  user-select: none;
 }
 
-#menuButton:hover {
-  background: rgba(20, 39, 58, 0.9);
+canvas {
+  display: block;
 }
-
-
-/* =========================================================
-   MENU PANEL
-========================================================= */
-
-#menuPanel {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: grid;
-  place-items: center;
-  background: rgba(2, 7, 13, 0.58);
-  backdrop-filter: blur(13px);
-  -webkit-backdrop-filter: blur(13px);
-  pointer-events: auto;
-}
-
-#menuPanel[hidden] {
-  display: none;
-}
-
-.menu-card {
-  width: min(420px, calc(100vw - 34px));
-  padding: 28px;
-  border-radius: 22px;
-  background:
-    linear-gradient(
-      180deg,
-      rgba(15, 30, 46, 0.98),
-      rgba(7, 15, 25, 0.98)
-    );
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
-}
-
-.menu-card h2 {
-  margin: 0 0 5px;
-  font-size: 26px;
-}
-
-.menu-card p {
-  margin: 0 0 20px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.menu-actions {
-  display: grid;
-  gap: 10px;
-}
-
-.menu-actions button,
-#resumeButton,
-#resetButton,
-#backButton {
-  width: 100%;
-  min-height: 46px;
-  border-radius: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.07);
-  color: white;
-  cursor: pointer;
-  font-weight: 800;
-}
-
-.menu-actions button:hover,
-#resumeButton:hover,
-#resetButton:hover,
-#backButton:hover {
-  background: rgba(255, 255, 255, 0.13);
-}
-
-#resumeButton {
-  background: linear-gradient(
-    135deg,
-    #347dc0,
-    #4da6ff
-  );
-  border-color: transparent;
-}
-
-#resetButton {
-  color: #ffb5bb;
-}
-
-#backButton {
-  color: #dbefff;
-}
-
-
-/* =========================================================
-   LOADING SCREEN
-========================================================= */
-
-#loading {
-  position: fixed;
-  inset: 0;
-  z-index: 5000;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background:
-    radial-gradient(
-      circle at 50% 35%,
-      rgba(55, 142, 209, 0.24),
-      transparent 38%
-    ),
-    linear-gradient(
-      145deg,
-      #07111f,
-      #0a1829 60%,
-      #0d2134
-    );
-  color: white;
-}
-
-.loading-card {
-  width: min(460px, 100%);
-  padding: 34px;
-  border-radius: 24px;
-  text-align: center;
-  background: rgba(8, 17, 29, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-.logo-mark {
-  display: grid;
-  place-items: center;
-  width: 66px;
-  height: 66px;
-  margin: 0 auto 16px;
-  border-radius: 20px;
-  background:
-    linear-gradient(
-      135deg,
-      #407ec6,
-      #62c9ff
-    );
-  box-shadow:
-    0 12px 30px rgba(74, 165, 255, 0.28),
-    inset 0 0 20px rgba(255, 255, 255, 0.16);
-  font-size: 28px;
-}
-
-.loading-card h1 {
-  margin: 0;
-  font-size: 28px;
-  letter-spacing: 0.02em;
-}
-
-.loading-card p {
-  margin: 10px 0 0;
-  color: var(--muted);
-  line-height: 1.55;
-  font-size: 13px;
-}
-
-
-/* =========================================================
-   GENERIC PANEL
-========================================================= */
-
-.game-panel {
-  border-radius: 16px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-
-/* =========================================================
-   HIDDEN
-========================================================= */
 
 [hidden] {
   display: none !important;
 }
 
-
-/* =========================================================
-   SMALL SCREENS
-========================================================= */
-
-@media (max-width: 800px) {
-
-  .top-hud {
-    top: 10px;
-    width: calc(100vw - 96px);
-    gap: 5px;
-  }
-
-  .hud-pill {
-    min-width: 0;
-    flex: 1;
-    padding: 8px 7px;
-    font-size: 9px;
-  }
-
-  #menuButton {
-    top: 10px;
-    right: 10px;
-    height: 40px;
-  }
-
-  #targetCard {
-    top: 62px;
-    width: calc(100vw - 24px);
-  }
-
-  #partyHud {
-    left: 10px;
-    top: 140px;
-    width: 150px;
-  }
-
-  .party-card {
-    padding: 7px 9px;
-  }
-
-  #feed {
-    top: 140px;
-    right: 10px;
-    width: 190px;
-  }
-
-  .player-status {
-    left: 10px;
-    bottom: 10px;
-    width: min(270px, calc(100vw - 20px));
-  }
-
-  #orbHud,
-  #sphereHud {
-    right: 10px;
-    bottom: 10px;
-    width: 210px;
-  }
-
-  .orb-slot {
-    grid-template-columns: 27px 1fr auto;
-    padding: 7px 8px;
-  }
-
-  .orb-slot strong {
-    width: 24px;
-    height: 24px;
-  }
-
-  .controls-help,
-  #controlsHelp {
-    display: none;
-  }
-
+button {
+  cursor: pointer;
+  background: #4289a6;
+  color: white;
+  border: 2px solid #9bdaef;
+  border-radius: 10px;
+  padding: 12px 17px;
+  font-size: 13px;
+  font-weight: 900;
+  transition: transform .12s, filter .12s;
 }
 
-
-@media (max-width: 560px) {
-
-  #partyHud {
-    display: none;
-  }
-
-  #feed {
-    top: 125px;
-    right: 8px;
-    width: 180px;
-  }
-
-  #feed > div {
-    font-size: 9px;
-    padding: 7px 9px;
-  }
-
-  .player-status {
-    width: 210px;
-  }
-
-  .status-line {
-    grid-template-columns: 52px 1fr 28px;
-    gap: 5px;
-  }
-
-  .status-label,
-  .status-value {
-    font-size: 8px;
-  }
-
-  #orbHud,
-  #sphereHud {
-    width: 170px;
-  }
-
-  .orb-slot span {
-    font-size: 9px;
-  }
-
-  .orb-slot small {
-    font-size: 8px;
-  }
-
+button:hover {
+  filter: brightness(1.14);
+  transform: translateY(-1px);
 }
 
+button:disabled {
+  opacity: .45;
+  cursor: default;
+}
 
-/* =========================================================
-   LANDSCAPE MOBILE
-========================================================= */
+#menu {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 20px;
+  background:
+    radial-gradient(
+      circle at 25% 20%,
+      #d7ffff55,
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 80% 75%,
+      #65c6ab88,
+      transparent 45%
+    ),
+    linear-gradient(135deg, #214b6b, #20858a, #2e7350);
+}
 
-@media (
-  max-height: 520px
-) and (
-  orientation: landscape
-) {
+.menu-content {
+  width: min(720px, 96vw);
+  text-align: center;
+  padding: 25px 30px;
+}
 
-  #targetCard {
-    top: 58px;
+.eyebrow {
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: #d6f9ff;
+}
+
+#menu h1 {
+  font-size: clamp(38px, 8vw, 82px);
+  margin: 15px 0 5px;
+  color: white;
+  letter-spacing: 3px;
+  text-shadow:
+    4px 5px #17536a,
+    7px 8px #103244;
+}
+
+#menu h2 {
+  color: var(--gold);
+  letter-spacing: 6px;
+  margin: 0;
+}
+
+#menu p {
+  color: #e1f7ef;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+#menu button {
+  display: block;
+  width: min(280px, 100%);
+  margin: 12px auto;
+  font-size: 15px;
+}
+
+#menu .primary {
+  background: #45b875;
+  border-color: #b0ffce;
+}
+
+#menu .secondary {
+  background: #45677d;
+}
+
+.instructions {
+  background: #071e30bc;
+  border: 2px solid #b2d9dd88;
+  border-radius: 14px;
+  margin: 22px auto 15px;
+  padding: 14px;
+}
+
+.instructions h3 {
+  color: var(--gold);
+  letter-spacing: 2px;
+}
+
+.instructions p {
+  font-size: 13px !important;
+  margin: 7px 0;
+}
+
+.instructions b {
+  color: #adffda;
+}
+
+#menu small {
+  color: #d1e8e8;
+}
+
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  text-shadow: 1px 2px 4px #001b2c;
+}
+
+#topLeft,
+#topRight,
+#bottomLeft {
+  position: absolute;
+  background: #102e43cb;
+  border: 1px solid #b4e9ec99;
+  border-radius: 12px;
+  padding: 12px 15px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 5px 20px #0003;
+}
+
+#topLeft {
+  top: 15px;
+  left: 15px;
+  min-width: 175px;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+#topLeft strong {
+  color: #a5f5d4;
+  font-size: 15px;
+}
+
+#topRight {
+  top: 15px;
+  right: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+#mode {
+  color: var(--gold);
+  font-size: 11px;
+  text-align: right;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+#crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 33px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+#targetLabel {
+  position: absolute;
+  top: calc(50% + 26px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 900;
+  color: #f5ffeb;
+}
+
+#notice {
+  position: absolute;
+  top: 61%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: 17px;
+  font-weight: 900;
+  color: #fff7c7;
+  max-width: 90vw;
+}
+
+#bottomLeft {
+  bottom: 17px;
+  left: 17px;
+  min-width: 195px;
+}
+
+#bottomLeft strong {
+  color: #9deec1;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+#companionName {
+  font-size: 17px;
+  font-weight: bold;
+  padding-top: 6px;
+}
+
+#companionHint {
+  padding-top: 5px;
+  font-size: 11px;
+  color: #d2e7ed;
+}
+
+#bottomCenter {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#partyBar {
+  display: flex;
+  gap: 5px;
+  padding: 7px;
+  border: 2px solid #a3e9e1;
+  background: #13354be6;
+  border-radius: 12px;
+}
+
+.partySlot {
+  position: relative;
+  width: 51px;
+  height: 49px;
+  border: 2px solid #6fa9a9;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 23px;
+  background: #305770;
+}
+
+.partySlot.active {
+  border-color: #ffe69d;
+  background: #53795f;
+}
+
+.partySlot small {
+  position: absolute;
+  bottom: 1px;
+  right: 4px;
+  font-size: 10px;
+}
+
+.shortcut {
+  font-size: 11px;
+  font-weight: bold;
+}
+
+#actions {
+  position: absolute;
+  top: 185px;
+  right: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  pointer-events: auto;
+}
+
+#actions button {
+  min-width: 138px;
+  background: #246785ed;
+}
+
+#flyBtn.enabled {
+  background: #2a9b65;
+  border-color: #b6ffcc;
+}
+
+#panel {
+  position: fixed;
+  z-index: 25;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(760px, 96vw);
+  max-height: 87vh;
+  overflow-y: auto;
+  padding: 20px;
+  background: #173b4def;
+  border: 3px solid #9edfe6;
+  border-radius: 15px;
+  box-shadow: 0 15px 70px #000b;
+}
+
+#panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#panel h2 {
+  margin: 0;
+  color: #c2f5db;
+}
+
+#panelHelp {
+  color: #d7e8ed;
+}
+
+#entries {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #345b69;
+  border: 1px solid #8fb7c2;
+  border-radius: 9px;
+  padding: 12px;
+}
+
+.entry .info {
+  flex: 1;
+}
+
+.entry strong,
+.entry small {
+  display: block;
+}
+
+.entry small {
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #e0e9e9;
+}
+
+.entry button {
+  padding: 9px 12px;
+}
+
+@media (max-width: 700px) {
+  #topLeft,
+  #topRight {
+    top: 7px;
+    padding: 8px;
+    font-size: 10px;
   }
 
-  #partyHud {
-    display: none;
+  #topLeft {
+    left: 7px;
+    min-width: 120px;
   }
 
-  #feed {
-    display: none;
+  #topRight {
+    right: 7px;
   }
 
-  .player-status {
-    left: 8px;
-    bottom: 8px;
-    width: 250px;
+  #actions {
+    top: 180px;
+    right: 7px;
   }
 
-  #orbHud,
-  #sphereHud {
-    right: 8px;
-    bottom: 8px;
-    width: 230px;
+  #actions button {
+    min-width: 105px;
+    padding: 8px;
+    font-size: 11px;
   }
 
-  .controls-help,
-  #controlsHelp {
-    display: none;
+  #bottomLeft {
+    left: 7px;
+    bottom: 90px;
+    min-width: 135px;
+    padding: 8px;
   }
 
+  #bottomCenter {
+    bottom: 10px;
+  }
+
+  .partySlot {
+    width: 42px;
+    height: 44px;
+  }
+
+  .shortcut {
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  .entry {
+    flex-wrap: wrap;
+  }
+
+  .entry .info {
+    flex-basis: 100%;
+  }
 }
