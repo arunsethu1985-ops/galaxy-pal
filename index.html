@@ -1,337 +1,119 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#143a4b">
 
-  <meta
-    name="viewport"
-    content="width=device-width,initial-scale=1,viewport-fit=cover"
-  />
+  <title>GALAXY PALFRONTIER</title>
 
-  <title>GALAXY PALS</title>
-
-  <link
-    rel="stylesheet"
-    href="game.css"
-  />
+  <link rel="stylesheet" href="game.css">
 </head>
 
 <body>
+  <main id="menu">
+    <div class="menuBox">
+      <div class="studio">✦ GALAXY STUDIOS ✦</div>
 
-  <main
-    id="gameShell"
-    class="game-shell"
-  >
+      <h1>PALFRONTIER</h1>
+      <h2>CREATURE ADVENTURE</h2>
 
-    <canvas
-      id="gameCanvas"
-    ></canvas>
+      <p class="description">
+        Explore beautiful lands, discover magical creatures,
+        capture new friends and build your own adventure.
+      </p>
 
+      <button id="start" class="primary">
+        ▶ START ADVENTURE
+      </button>
 
-    <!-- LOADING -->
+      <button id="reset" class="danger">
+        RESET SAVED WORLD
+      </button>
 
-    <div
-      id="loading"
-      class="loading"
-    >
+      <div class="guide">
+        <h3>GAME CONTROLS</h3>
 
-      <div class="loading-card">
-
-        <div class="logo-mark">
-          ✦
-        </div>
-
-        <h1>
-          GALAXY PALS
-        </h1>
-
-        <p>
-          Loading 3D world...
-        </p>
-
+        <p><b>WASD</b> — Move</p>
+        <p><b>Mouse</b> — Look around</p>
+        <p><b>Shift</b> — Sprint</p>
+        <p><b>Space</b> — Jump / Fly up</p>
+        <p><b>X</b> — Fly down</p>
+        <p><b>F</b> — Turn flying on/off</p>
+        <p><b>Q</b> — Throw a capture orb</p>
+        <p><b>Left Click</b> — Gather resources</p>
+        <p><b>E</b> — Companion command</p>
+        <p><b>1–5</b> — Select captured creature</p>
+        <p><b>I</b> — Inventory</p>
+        <p><b>C</b> — Crafting</p>
+        <p><b>B</b> — Base building</p>
+        <p><b>R</b> — Eat food</p>
+        <p><b>V</b> — Change camera</p>
+        <p><b>P</b> — Save game</p>
+        <p><b>Esc</b> — Pause</p>
       </div>
 
+      <small>
+        Original browser adventure • Keyboard and mouse
+      </small>
     </div>
-
-
-    <!-- HUD -->
-
-    <div class="hud">
-
-
-      <!-- TOP HUD -->
-
-      <header class="top-hud">
-
-        <div
-          id="zoneName"
-          class="hud-pill"
-        >
-          VERDANT WILDS
-        </div>
-
-        <div
-          id="clockText"
-          class="hud-pill"
-        >
-          DAY 1 • 08:00
-        </div>
-
-        <div
-          id="levelText"
-          class="hud-pill"
-        >
-          LEVEL 1
-        </div>
-
-      </header>
-
-
-      <!-- CROSSHAIR -->
-
-      <div
-        id="crosshair"
-        class="crosshair"
-        aria-hidden="true"
-      ></div>
-
-
-      <!-- TARGET -->
-
-      <section
-        id="targetCard"
-        hidden
-      >
-
-        <div class="target-top">
-
-          <div>
-
-            <div id="targetName">
-              Wild Pal
-            </div>
-
-            <div id="targetMeta">
-              LV 1 • Neutral
-            </div>
-
-          </div>
-
-
-          <div class="capture-rate">
-
-            <small>
-              Capture
-            </small>
-
-            <div id="captureChance">
-              25%
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <div class="target-bar">
-
-          <div
-            id="targetHpBar"
-          ></div>
-
-        </div>
-
-      </section>
-
-
-      <!-- PARTY -->
-
-      <aside
-        id="partyHud"
-      ></aside>
-
-
-      <!-- MESSAGE FEED -->
-
-      <aside
-        id="feed"
-      ></aside>
-
-
-      <!-- PLAYER STATUS -->
-
-      <section class="player-status">
-
-        <div class="status-card">
-
-
-          <div class="status-line">
-
-            <div class="status-label">
-              HP
-            </div>
-
-            <div class="bar-track">
-
-              <div
-                id="hpBar"
-                class="bar-fill"
-              ></div>
-
-            </div>
-
-            <div
-              id="hpText"
-              class="status-value"
-            >
-              100
-            </div>
-
-          </div>
-
-
-          <div class="status-line">
-
-            <div class="status-label">
-              STAMINA
-            </div>
-
-            <div class="bar-track">
-
-              <div
-                id="staminaBar"
-                class="bar-fill"
-              ></div>
-
-            </div>
-
-            <div
-              id="staminaText"
-              class="status-value"
-            >
-              100
-            </div>
-
-          </div>
-
-
-          <div class="status-line">
-
-            <div class="status-label">
-              FOOD
-            </div>
-
-            <div class="bar-track">
-
-              <div
-                id="foodBar"
-                class="bar-fill"
-              ></div>
-
-            </div>
-
-            <div
-              id="foodText"
-              class="status-value"
-            >
-              100
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      <!-- SPHERES -->
-
-      <aside
-        id="sphereHud"
-      ></aside>
-
-
-      <!-- CONTROLS -->
-
-      <div
-        id="controlsHelp"
-        class="controls-help"
-      >
-        WASD Move • Shift Sprint • Mouse Camera • Left Click Attack • Hold Q Aim • Release Q Throw Sphere • F Summon • E Mount • 1–5 Sphere
-      </div>
-
-
-    </div>
-
-
-    <!-- MENU BUTTON -->
-
-    <button
-      id="menuButton"
-      type="button"
-    >
-      ☰
-    </button>
-
-
-    <!-- MENU -->
-
-    <section
-      id="menuPanel"
-      hidden
-    >
-
-      <div class="menu-card">
-
-        <h2>
-          GALAXY PALS
-        </h2>
-
-        <p>
-          Game Menu
-        </p>
-
-
-        <div class="menu-actions">
-
-          <button
-            id="resumeButton"
-            type="button"
-          >
-            Resume
-          </button>
-
-          <button
-            id="resetButton"
-            type="button"
-          >
-            Reset Save
-          </button>
-
-          <button
-            id="backButton"
-            type="button"
-            onclick="window.location.href='/'"
-          >
-            Back to GALAXY
-          </button>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
   </main>
 
+  <div id="hud" hidden>
+    <div id="topLeft" class="hudBox">
+      <strong>✦ GALAXY PALFRONTIER</strong>
 
-  <script
-    type="module"
-    src="game.js"
-  ></script>
+      <div id="biome">Emerald Meadows</div>
+      <div id="coords">XYZ 0, 0, 0</div>
+      <div id="time">Day 1 • Morning</div>
+      <div id="fps">FPS --</div>
+    </div>
 
+    <div id="topRight" class="hudBox">
+      <div>❤️ Health: <span id="health">100</span></div>
+      <div>🍗 Hunger: <span id="hunger">100</span></div>
+      <div>🔮 Orbs: <span id="orbs">8</span></div>
+      <div id="flightStatus">WALKING</div>
+    </div>
+
+    <div id="crosshair">+</div>
+    <div id="targetName"></div>
+    <div id="notice"></div>
+
+    <div id="companionPanel" class="hudBox">
+      <div class="miniTitle">MY COMPANION</div>
+      <strong id="companionName">No creature selected</strong>
+      <small id="companionInfo">
+        Capture a creature with Q
+      </small>
+    </div>
+
+    <div id="bottom">
+      <div id="partyBar"></div>
+      <div class="hint">
+        Q CAPTURE · E COMMAND · C CRAFT · B BUILD
+      </div>
+    </div>
+
+    <div id="gameActions">
+      <button id="captureButton">🔮 CAPTURE</button>
+      <button id="flyButton">✈ FLY ON</button>
+      <button id="buildButton">🏠 BUILD</button>
+      <button id="inventoryButton">🎒 BAG</button>
+    </div>
+  </div>
+
+  <section id="panel" hidden>
+    <header>
+      <h2 id="panelTitle">Inventory</h2>
+      <button id="closePanel">CLOSE</button>
+    </header>
+
+    <p id="panelHelp"></p>
+    <div id="entries"></div>
+  </section>
+
+  <script type="module" src="game.js"></script>
 </body>
-
 </html>
