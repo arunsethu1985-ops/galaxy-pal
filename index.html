@@ -2,26 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <meta name="viewport"
-        content="width=device-width, initial-scale=1">
+        content="width=device-width, initial-scale=1.0">
+
   <meta name="theme-color" content="#143a4b">
 
-  <title>GALAXY PALFRONTIER</title>
+  <title>
+    GALAXY PALFRONTIER — Graphics & Animation Edition
+  </title>
 
+  <!-- GAME CSS -->
   <link rel="stylesheet" href="game.css">
 </head>
 
 <body>
+
+  <!-- MAIN MENU -->
   <main id="menu">
+
     <div class="menuBox">
-      <div class="studio">✦ GALAXY STUDIOS ✦</div>
+
+      <div class="studio">
+        ✦ GALAXY STUDIOS ✦
+      </div>
 
       <h1>PALFRONTIER</h1>
-      <h2>CREATURE ADVENTURE</h2>
+
+      <h2>
+        WILD ISLES — GRAPHICS & ANIMATION EDITION
+      </h2>
 
       <p class="description">
-        Explore beautiful lands, discover magical creatures,
-        capture new friends and build your own adventure.
+        Explore a beautiful fantasy world filled with
+        magical creatures, enchanted forests, animated
+        landscapes, glowing crystals and exciting adventures.
       </p>
 
       <button id="start" class="primary">
@@ -32,88 +47,192 @@
         RESET SAVED WORLD
       </button>
 
-      <div class="guide">
-        <h3>GAME CONTROLS</h3>
+      <section class="guide">
 
-        <p><b>WASD</b> — Move</p>
+        <h3>🎮 GAME CONTROLS</h3>
+
+        <p><b>W A S D</b> — Move character</p>
+
         <p><b>Mouse</b> — Look around</p>
+
         <p><b>Shift</b> — Sprint</p>
+
         <p><b>Space</b> — Jump / Fly up</p>
+
         <p><b>X</b> — Fly down</p>
-        <p><b>F</b> — Turn flying on/off</p>
-        <p><b>Q</b> — Throw a capture orb</p>
-        <p><b>Left Click</b> — Gather resources</p>
-        <p><b>E</b> — Companion command</p>
-        <p><b>1–5</b> — Select captured creature</p>
-        <p><b>I</b> — Inventory</p>
-        <p><b>C</b> — Crafting</p>
+
+        <p><b>F</b> — Turn flying ON / OFF</p>
+
+        <p><b>Q</b> — Throw Capture Orb</p>
+
+        <p><b>Left Click</b> — Collect resources</p>
+
+        <p><b>E</b> — Companion attack</p>
+
+        <p><b>1 – 5</b> — Select captured creature</p>
+
+        <p><b>I</b> — Open inventory</p>
+
+        <p><b>C</b> — Open crafting</p>
+
         <p><b>B</b> — Base building</p>
+
         <p><b>R</b> — Eat food</p>
-        <p><b>V</b> — Change camera</p>
+
+        <p><b>V</b> — Change camera view</p>
+
         <p><b>P</b> — Save game</p>
-        <p><b>Esc</b> — Pause</p>
-      </div>
+
+        <p><b>ESC</b> — Pause game</p>
+
+      </section>
 
       <small>
-        Original browser adventure • Keyboard and mouse
+        Original procedural 3D adventure • Desktop recommended
       </small>
+
     </div>
+
   </main>
 
+
+  <!-- GAME HEADS-UP DISPLAY -->
   <div id="hud" hidden>
+
+    <!-- TOP LEFT INFORMATION -->
     <div id="topLeft" class="hudBox">
-      <strong>✦ GALAXY PALFRONTIER</strong>
 
-      <div id="biome">Emerald Meadows</div>
-      <div id="coords">XYZ 0, 0, 0</div>
-      <div id="time">Day 1 • Morning</div>
-      <div id="fps">FPS --</div>
-    </div>
+      <strong>
+        ✦ GALAXY PALFRONTIER
+      </strong>
 
-    <div id="topRight" class="hudBox">
-      <div>❤️ Health: <span id="health">100</span></div>
-      <div>🍗 Hunger: <span id="hunger">100</span></div>
-      <div>🔮 Orbs: <span id="orbs">8</span></div>
-      <div id="flightStatus">WALKING</div>
-    </div>
-
-    <div id="crosshair">+</div>
-    <div id="targetName"></div>
-    <div id="notice"></div>
-
-    <div id="companionPanel" class="hudBox">
-      <div class="miniTitle">MY COMPANION</div>
-      <strong id="companionName">No creature selected</strong>
-      <small id="companionInfo">
-        Capture a creature with Q
-      </small>
-    </div>
-
-    <div id="bottom">
-      <div id="partyBar"></div>
-      <div class="hint">
-        Q CAPTURE · E COMMAND · C CRAFT · B BUILD
+      <div id="biome">
+        Emerald Meadow
       </div>
+
+      <div id="coords">
+        XYZ 0, 0, 0
+      </div>
+
+      <div id="clock">
+        Day 1 · Morning
+      </div>
+
+      <div id="fps">
+        FPS --
+      </div>
+
     </div>
 
-    <div id="gameActions">
-      <button id="captureButton">🔮 CAPTURE</button>
-      <button id="flyButton">✈ FLY ON</button>
-      <button id="buildButton">🏠 BUILD</button>
-      <button id="inventoryButton">🎒 BAG</button>
+
+    <!-- TOP RIGHT HEALTH / HUNGER -->
+    <div id="topRight" class="hudBox">
+
+      <div>
+        ❤️ Health:
+        <span id="hp">100</span>
+      </div>
+
+      <div>
+        🍗 Hunger:
+        <span id="food">100</span>
+      </div>
+
+      <div>
+        🔮 Capture Orbs:
+        <span id="orbCount">8</span>
+      </div>
+
     </div>
+
+
+    <!-- CROSSHAIR -->
+    <div id="crosshair">
+      +
+    </div>
+
+    <div id="target"></div>
+
+    <!-- IN-GAME NOTIFICATIONS -->
+    <div id="toast"></div>
+
+
+    <!-- COMPANION INFORMATION -->
+    <div id="companionPanel" class="hudBox">
+
+      <div class="miniTitle">
+        🐾 MY COMPANION
+      </div>
+
+      <strong id="buddyName">
+        No creature selected
+      </strong>
+
+      <small id="buddyMode">
+        Capture a wild creature with Q
+      </small>
+
+    </div>
+
+
+    <!-- PARTY HOTBAR -->
+    <div id="bottom">
+
+      <div id="party"></div>
+
+      <div class="hint">
+        Q CAPTURE · E ATTACK · F FLY · B BUILD
+      </div>
+
+    </div>
+
+
+    <!-- ACTION BUTTONS -->
+    <div id="gameActions">
+
+      <button id="capture">
+        🔮 CAPTURE
+      </button>
+
+      <button id="fly">
+        ✈ FLY ON
+      </button>
+
+      <button id="craft">
+        ⚒ CRAFT
+      </button>
+
+      <button id="build">
+        🏠 BUILD
+      </button>
+
+    </div>
+
   </div>
 
+
+  <!-- INVENTORY / CRAFTING / BUILDING PANEL -->
   <section id="panel" hidden>
+
     <header>
-      <h2 id="panelTitle">Inventory</h2>
-      <button id="closePanel">CLOSE</button>
+
+      <h2 id="panelTitle">
+        Inventory
+      </h2>
+
+      <button id="close">
+        CLOSE
+      </button>
+
     </header>
 
-    <p id="panelHelp"></p>
     <div id="entries"></div>
+
   </section>
 
+
+  <!-- GAME JAVASCRIPT -->
   <script type="module" src="game.js"></script>
+
 </body>
 </html>
