@@ -1,28 +1,22 @@
 import * as THREE from "https://esm.sh/three@0.180.0";
 
-/* =====================================================
-   GALAXY PALFRONTIER
-   GRAPHICS & ANIMATION EDITION
-   COMPLETE CORRECTED GAME.JS
-
-   Original creature-collecting adventure
-   ===================================================== */
+/* ==================================================
+   GALAXY PALFRONTIER — WILD ISLES
+   ORIGINAL 3D CREATURE ADVENTURE
+   ================================================== */
 
 const $ = id => document.getElementById(id);
-
-const SAVE_KEY = "galaxy-palfrontier-wild-isles-v1";
-const WORLD = 110;
+const STORE = "galaxy-palfrontier-rebuild-v1";
+const SIZE = 110;
 
 const keys = {};
+const clock = new THREE.Clock();
 
 let saved = {};
 
 try {
-  saved = JSON.parse(
-    localStorage.getItem(SAVE_KEY) || "{}"
-  );
-} catch (error) {
-  console.warn("Save loading failed:", error);
+  saved = JSON.parse(localStorage.getItem(STORE) || "{}");
+} catch {
   saved = {};
 }
 
@@ -31,119 +25,59 @@ const bag = {
   stone: 9,
   crystal: 5,
   berries: 8,
-  fiber: 7,
+  fiber: 8,
   orbs: 8,
-  meals: 3,
-  ...(saved.bag || {})
+  meals: 2,
+  ...saved.bag
 };
 
-let hp = saved.hp ?? 100;
-let food = saved.food ?? 100;
-let worldTime = saved.day ?? 30;
+let health = saved.health ?? 100;
+let hunger = saved.hunger ?? 100;
+let time = saved.time ?? 20;
 
-let playing = false;
+let active = false;
+let paused = true;
 let flying = false;
-let cameraView = 0;
-let panel = "";
-
+let firstPerson = false;
+let currentDialog = "";
 let cooldown = 0;
-let toastTime = 0;
-let selected = Math.min(saved.selected || 0, 4);
-
-/* =====================================================
-   CREATURE TYPES
-   ===================================================== */
-
-const types = {
-  Bloomlet: {
-    body: 0x83d48a,
-    trim: 0xd5f1b4,
-    accent: 0x3c9669,
-    emoji: "🌿",
-    element: "Leaf",
-    speed: 1.7
-  },
-
-  Cinderfox: {
-    body: 0xf19757,
-    trim: 0xffd89f,
-    accent: 0xb95739,
-    emoji: "🔥",
-    element: "Flame",
-    speed: 2.5
-  },
-
-  Tidepup: {
-    body: 0x78bce4,
-    trim: 0xc8f2ff,
-    accent: 0x4a82bd,
-    emoji: "💧",
-    element: "Tide",
-    speed: 2
-  },
-
-  Sparkit: {
-    body: 0xf5d36f,
-    trim: 0xfff1b6,
-    accent: 0xa98537,
-    emoji: "⚡",
-    element: "Spark",
-    speed: 2.7
-  },
-
-  Moonhorn: {
-    body: 0xcab5ee,
-    trim: 0xf9f6ff,
-    accent: 0x8865c8,
-    emoji: "✨",
-    element: "Moon",
-    speed: 1.6
-  },
-
-  Brambleon: {
-    body: 0x6fbaa7,
-    trim: 0x9de0b9,
-    accent: 0x39775f,
-    emoji: "🌲",
-    element: "Forest",
-    speed: 1.4
-  }
-};
-
-const species = Object.keys(types);
+let toastTimer = 0;
+let yaw = 0;
+let pitch = 0.1;
+let verticalSpeed = 0;
+let grounded = true;
+let rightDragging = false;
 
 const party = (
-  Array.isArray(saved.party)
-    ? saved.party
-    : []
-).filter(name => types[name]).slice(0, 5);
+  Array.isArray(saved.party) ? saved.party : []
+).slice(0, 5);
 
-/* =====================================================
-   INITIAL UI SETUP
-   ===================================================== */
+let selected = Math.min(
+  saved.selected ?? 0,
+  Math.max(0, party.length - 1)
+);
 
-$("menu").hidden = false;
-$("hud").hidden = true;
-$("panel").hidden = true;
-
-function toast(message) {
+function notify(message) {
   $("toast").textContent = message;
-  toastTime = 3;
+  toastTimer = 3;
 }
 
-function add(item, amount = 1) {
-  bag[item] = (bag[item] || 0) + amount;
+function get(item) {
+  return bag[item] || 0;
 }
 
-function have(cost) {
+function earn(item, amount) {
+  bag[item] = get(item) + amount;
+}
+
+function canAfford(cost) {
   return Object.entries(cost).every(
-    ([item, amount]) =>
-      (bag[item] || 0) >= amount
+    ([item, amount]) => get(item) >= amount
   );
 }
 
-function spend(cost) {
-  if (!have(cost)) return false;
+function pay(cost) {
+  if (!canAfford(cost)) return false;
 
   for (const [item, amount] of Object.entries(cost)) {
     bag[item] -= amount;
@@ -152,22 +86,43 @@ function spend(cost) {
   return true;
 }
 
-/* =====================================================
-   THREE.JS RENDERER
-   ===================================================== */
+function hash(x, z, seed = 0) {
+  let n = Math.sin(
+    x * 127.1 + z * 311.7 + seed * 71.9
+  ) * 43758.5453;
+
+  return n - Math.floor(n);
+}
+
+function terrainY(x, z) {
+  return (
+    3 +
+    Math.sin(x * .038) * 4 +
+    Math.cos(z * .048) * 3 +
+    Math.sin((x + z) * .079) * 1.6 +
+    Math.sin(x * .017 + z * .02) * 4
+  );
+}
+
+function biome(x, z) {
+  if (x > 30 && z < -25) return "Blossom Ridge";
+  if (x < -25 && z > 10) return "Elder Forest";
+  if (x > 36 && z > 25) return "Golden Grasslands";
+  return "Emerald Meadow";
+}
+
+/* ==================================================
+   3D ENGINE
+   ================================================== */
 
 const scene = new THREE.Scene();
-
-scene.background = new THREE.Color(0x96d4ee);
-scene.fog = new THREE.FogExp2(
-  0xa5d6e7,
-  0.0085
-);
+scene.background = new THREE.Color(0x8bd0f2);
+scene.fog = new THREE.Fog(0x8bd0f2, 70, 180);
 
 const camera = new THREE.PerspectiveCamera(
-  68,
-  window.innerWidth / window.innerHeight,
-  0.1,
+  70,
+  innerWidth / innerHeight,
+  .1,
   350
 );
 
@@ -178,91 +133,67 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: "high-performance"
 });
 
-renderer.setSize(
-  window.innerWidth,
-  window.innerHeight
-);
-
+renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(
-  Math.min(window.devicePixelRatio || 1, 1.5)
+  Math.min(devicePixelRatio || 1, 1.5)
 );
 
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.3;
 
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.22;
+$("game").append(renderer.domElement);
 
-document.body.appendChild(renderer.domElement);
-
-// Ensure the canvas sits behind the HTML interface.
-renderer.domElement.style.position = "fixed";
-renderer.domElement.style.inset = "0";
-renderer.domElement.style.zIndex = "0";
-renderer.domElement.style.display = "block";
-
-/* =====================================================
-   LIGHTING
-   ===================================================== */
-
-const hemi = new THREE.HemisphereLight(
-  0xe7f7ff,
-  0x567c57,
-  1.9
+const ambient = new THREE.HemisphereLight(
+  0xf2faff,
+  0x587452,
+  2.1
 );
-
-scene.add(hemi);
+scene.add(ambient);
 
 const sun = new THREE.DirectionalLight(
-  0xffe3b6,
-  2.3
+  0xffedce,
+  2.7
 );
-
-sun.position.set(35, 65, 27);
+sun.position.set(30, 65, 20);
 sun.castShadow = true;
-
 sun.shadow.mapSize.set(1024, 1024);
-
-sun.shadow.camera.left = -65;
-sun.shadow.camera.right = 65;
-sun.shadow.camera.top = 65;
-sun.shadow.camera.bottom = -65;
-sun.shadow.camera.near = 1;
-sun.shadow.camera.far = 170;
-
-sun.shadow.bias = -0.00025;
-sun.shadow.normalBias = 0.03;
-
+sun.shadow.camera.left = -60;
+sun.shadow.camera.right = 60;
+sun.shadow.camera.top = 60;
+sun.shadow.camera.bottom = -60;
+sun.shadow.camera.far = 150;
 scene.add(sun);
 
-/* =====================================================
-   MATERIALS AND SHAPES
-   ===================================================== */
+/* ==================================================
+   SHAPES AND MATERIALS
+   ================================================== */
+
+const shapes = {
+  sphere: new THREE.SphereGeometry(1, 14, 10),
+  box: new THREE.BoxGeometry(1, 1, 1),
+  cone: new THREE.ConeGeometry(1, 1, 8),
+  trunk: new THREE.CylinderGeometry(1, 1, 1, 9),
+  rock: new THREE.IcosahedronGeometry(1, 1)
+};
 
 const materials = new Map();
 
-const geometries = {
-  sphere: new THREE.SphereGeometry(1, 12, 9),
-  low: new THREE.IcosahedronGeometry(1, 1),
-  box: new THREE.BoxGeometry(1, 1, 1),
-  cone: new THREE.ConeGeometry(1, 1, 7),
-  cylinder: new THREE.CylinderGeometry(1, 1, 1, 8)
-};
-
 function material(color, glow = false) {
-  const key = `${color}:${glow}`;
+  const key = `${color}-${glow}`;
 
   if (!materials.has(key)) {
     materials.set(
       key,
       new THREE.MeshStandardMaterial({
         color,
-        roughness: 0.78,
-        metalness: 0.02,
-        emissive: glow ? color : 0x000000,
-        emissiveIntensity: glow ? 0.35 : 0
+        roughness: .78,
+        metalness: .04,
+        emissive: glow ? color : 0,
+        emissiveIntensity: glow ? .5 : 0
       })
     );
   }
@@ -270,123 +201,68 @@ function material(color, glow = false) {
   return materials.get(key);
 }
 
-function part(
+function mesh(
   parent,
-  form,
+  type,
   color,
   x, y, z,
   sx = 1, sy = 1, sz = 1,
   glow = false
 ) {
   const object = new THREE.Mesh(
-    geometries[form],
+    shapes[type],
     material(color, glow)
   );
 
   object.position.set(x, y, z);
   object.scale.set(sx, sy, sz);
-
   object.castShadow = true;
   object.receiveShadow = true;
-
   parent.add(object);
 
   return object;
 }
 
-function random(x, z, seed = 0) {
-  const value = Math.sin(
-    x * 127.1 +
-    z * 311.7 +
-    seed * 78.7
-  ) * 43758.5453;
+/* ==================================================
+   LANDSCAPE
+   ================================================== */
 
-  return value - Math.floor(value);
-}
-
-/* =====================================================
-   TERRAIN
-   ===================================================== */
-
-function height(x, z) {
-  return (
-    2 +
-    Math.sin(x * 0.045) * 3.3 +
-    Math.cos(z * 0.037) * 2.4 +
-    Math.sin((x + z) * 0.07) * 1.6 +
-    Math.sin(x * 0.016 + z * 0.011) * 4.1
-  );
-}
-
-function biome(x, z) {
-  if (x > 28 && z < -22) {
-    return "Blossom Ridge";
-  }
-
-  if (x < -28 && z > 8) {
-    return "Ancient Woodland";
-  }
-
-  if (x > 35 && z > 25) {
-    return "Golden Savannah";
-  }
-
-  return "Emerald Meadow";
-}
-
-const terrain = new THREE.PlaneGeometry(
-  WORLD * 2,
-  WORLD * 2,
-  110,
-  110
+const groundGeometry = new THREE.PlaneGeometry(
+  SIZE * 2, SIZE * 2, 110, 110
 );
+groundGeometry.rotateX(-Math.PI / 2);
 
-terrain.rotateX(-Math.PI / 2);
-
-const positions = terrain.attributes.position;
-const terrainColors = [];
+const positions = groundGeometry.attributes.position;
+const colors = [];
 
 for (let i = 0; i < positions.count; i++) {
   const x = positions.getX(i);
   const z = positions.getZ(i);
+  positions.setY(i, terrainY(x, z));
 
-  positions.setY(i, height(x, z));
-
-  const area = biome(x, z);
-
+  const zone = biome(x, z);
   const color = new THREE.Color(
-    area === "Blossom Ridge"
-      ? 0x90be7a
-      : area === "Ancient Woodland"
-        ? 0x408b68
-        : area === "Golden Savannah"
-          ? 0xb5bd78
-          : 0x68ad6b
+    zone === "Blossom Ridge" ? 0x90bf7e :
+    zone === "Elder Forest" ? 0x438d69 :
+    zone === "Golden Grasslands" ? 0xb1b978 :
+    0x69b76b
   );
 
   color.multiplyScalar(
-    0.89 + random(x, z, 2) * 0.22
+    .9 + hash(x, z, 3) * .2
   );
 
-  terrainColors.push(
-    color.r,
-    color.g,
-    color.b
-  );
+  colors.push(color.r, color.g, color.b);
 }
 
-terrain.setAttribute(
+groundGeometry.setAttribute(
   "color",
-  new THREE.Float32BufferAttribute(
-    terrainColors,
-    3
-  )
+  new THREE.Float32BufferAttribute(colors, 3)
 );
-
-terrain.computeVertexNormals();
+groundGeometry.computeVertexNormals();
 
 const ground = new THREE.Mesh(
-  terrain,
+  groundGeometry,
   new THREE.MeshStandardMaterial({
     vertexColors: true,
     roughness: 1
@@ -394,815 +270,295 @@ const ground = new THREE.Mesh(
 );
 
 ground.receiveShadow = true;
-
 scene.add(ground);
 
-/* =====================================================
-   ANIMATED WATER
-   ===================================================== */
+/* Water is intentionally placed below the hills. */
 
-const waterUniforms = {
-  time: { value: 0 },
-  tint: {
-    value: new THREE.Color(0x50bfc9)
-  }
-};
+const waterMaterial = new THREE.MeshPhysicalMaterial({
+  color: 0x3daac8,
+  roughness: .23,
+  metalness: .05,
+  transparent: true,
+  opacity: .78,
+  side: THREE.DoubleSide
+});
+
+const waterGeometry = new THREE.PlaneGeometry(
+  SIZE * 2, SIZE * 2, 35, 35
+);
+waterGeometry.rotateX(-Math.PI / 2);
 
 const water = new THREE.Mesh(
-  new THREE.PlaneGeometry(
-    WORLD * 2,
-    WORLD * 2
-  ),
-
-  new THREE.ShaderMaterial({
-    uniforms: waterUniforms,
-
-    transparent: true,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-
-    vertexShader: `
-      varying vec2 vUv;
-      varying vec3 vWorld;
-
-      uniform float time;
-
-      void main() {
-        vUv = uv;
-
-        vec3 p = position;
-
-        p.z +=
-          sin(p.x * 0.045 + time * 0.8) * 0.23 +
-          cos(p.y * 0.07 - time * 0.7) * 0.13;
-
-        vec4 worldPosition =
-          modelMatrix * vec4(p, 1.0);
-
-        vWorld = worldPosition.xyz;
-
-        gl_Position =
-          projectionMatrix *
-          viewMatrix *
-          worldPosition;
-      }
-    `,
-
-    fragmentShader: `
-      uniform vec3 tint;
-      uniform float time;
-
-      varying vec2 vUv;
-      varying vec3 vWorld;
-
-      void main() {
-        float wave =
-          sin(vWorld.x * 0.26 + time * 1.8) *
-          cos(vWorld.z * 0.21 - time * 0.9);
-
-        float shine = pow(
-          max(
-            0.0,
-            sin(
-              vWorld.x * 0.8 +
-              vWorld.z * 0.25 +
-              time * 2.2
-            )
-          ),
-          15.0
-        );
-
-        vec3 color =
-          tint +
-          vec3(0.05, 0.10, 0.12) * wave +
-          vec3(0.23, 0.33, 0.34) * shine;
-
-        gl_FragColor = vec4(color, 0.77);
-      }
-    `
-  })
+  waterGeometry,
+  waterMaterial
 );
-
-water.rotation.x = -Math.PI / 2;
-water.position.y = -1.1;
-
+water.position.y = -1.8;
 scene.add(water);
 
-/* =====================================================
-   RESOURCES AND TREES
-   ===================================================== */
+/* ==================================================
+   FOREST, ROCKS, FLOWERS, GRASS
+   ================================================== */
 
-const animatedTrees = [];
 const resources = [];
+const trees = [];
+const flowers = [];
+const clouds = [];
 
-function createResource(
-  type,
-  x,
-  z,
-  amount,
-  group
-) {
-  group.position.set(x, height(x, z), z);
-
+function putResource(group, type, amount, x, z) {
+  group.position.set(x, terrainY(x, z), z);
+  group.userData.resource = {type, amount};
+  resources.push(group);
   scene.add(group);
-
-  resources.push({
-    type,
-    x,
-    z,
-    amount,
-    group
-  });
 }
 
-function createTree(x, z, kind = "oak") {
-  const group = new THREE.Group();
-
-  const giant = kind === "ancient";
+function tree(x, z, kind = "normal") {
+  const g = new THREE.Group();
+  const giant = kind === "giant";
   const cherry = kind === "cherry";
+  const h = giant ? 10 : 5.7;
 
-  const treeHeight = giant ? 10 : 5.5;
-
-  part(
-    group,
-    "cylinder",
-    giant ? 0x5d5141 : 0x855f42,
-    0,
-    treeHeight / 2,
-    0,
-    giant ? 0.67 : 0.36,
-    treeHeight,
-    giant ? 0.67 : 0.36
+  mesh(
+    g, "trunk",
+    giant ? 0x67513c : 0x805f44,
+    0, h / 2, 0,
+    giant ? .7 : .38, h,
+    giant ? .7 : .38
   );
 
-  const colors = cherry
-    ? [0xf8b3d5, 0xffd1e3, 0xe895bc]
+  const palette = cherry
+    ? [0xf6a3c8, 0xfad0de, 0xe88fb0]
     : giant
-      ? [0x286b66, 0x3c8870, 0x50a080]
-      : [0x428e4e, 0x5dad61, 0x80c572];
+      ? [0x317966, 0x429377, 0x56a887]
+      : [0x3f9052, 0x64af62, 0x80c473];
 
-  const count = giant ? 11 : 7;
+  for (let i = 0; i < (giant ? 10 : 6); i++) {
+    const a = i * 2.399;
+    const r = i ? (giant ? 2.9 : 1.35) : 0;
 
-  for (let i = 0; i < count; i++) {
-    const angle = i * 2.4;
-
-    const radius =
-      i === 0
-        ? 0
-        : giant ? 3.3 : 1.4;
-
-    part(
-      group,
-      "low",
-      colors[i % 3],
-      Math.cos(angle) * radius,
-      treeHeight + Math.sin(i * 2) * 0.7,
-      Math.sin(angle) * radius,
-      giant ? 2.4 : 1.6,
-      giant ? 1.7 : 1.27,
-      giant ? 2.4 : 1.6
+    mesh(
+      g, "rock",
+      palette[i % 3],
+      Math.cos(a) * r,
+      h + Math.sin(i * 2) * .5,
+      Math.sin(a) * r,
+      giant ? 2.4 : 1.5,
+      giant ? 1.8 : 1.25,
+      giant ? 2.4 : 1.5
     );
   }
 
-  createResource(
-    "wood",
-    x,
-    z,
-    giant ? 7 : 4,
-    group
+  putResource(
+    g, "wood", giant ? 7 : 4, x, z
   );
 
-  animatedTrees.push({
-    group,
-    phase: random(x, z, 28) * Math.PI * 2,
-    sway: giant ? 0.004 : 0.01
+  trees.push({
+    object: g,
+    phase: hash(x, z, 6) * 6
   });
 }
 
-function createRock(x, z, crystal = false) {
-  const group = new THREE.Group();
+function rock(x, z, crystal = false) {
+  const g = new THREE.Group();
 
   if (crystal) {
     for (let i = 0; i < 4; i++) {
-      const angle = i * Math.PI / 2;
+      const a = i * Math.PI / 2;
 
-      part(
-        group,
-        "cone",
-        i % 2 ? 0x73e5e6 : 0xb19bff,
-        Math.cos(angle) * 0.64,
-        1.2,
-        Math.sin(angle) * 0.64,
-        0.58,
-        2.4,
-        0.58,
+      mesh(
+        g, "cone",
+        i % 2 ? 0x70e4f1 : 0xb3a0ff,
+        Math.cos(a) * .6,
+        1.25,
+        Math.sin(a) * .6,
+        .55, 2.4, .55,
         true
       );
     }
   } else {
-    part(
-      group,
-      "low",
-      0x87989c,
-      0, 0.64, 0,
-      1.2, 0.9, 1
-    );
-
-    part(
-      group,
-      "low",
-      0xb1b8b3,
-      0.72, 0.38, 0.35,
-      0.6, 0.5, 0.6
+    mesh(
+      g, "rock",
+      0x919a9f,
+      0, .7, 0,
+      1.3, .9, 1.1
     );
   }
 
-  createResource(
+  putResource(
+    g,
     crystal ? "crystal" : "stone",
-    x,
-    z,
     crystal ? 2 : 4,
-    group
+    x, z
   );
 }
 
-function createBush(x, z) {
-  const group = new THREE.Group();
+function bush(x, z) {
+  const g = new THREE.Group();
 
-  part(
-    group,
-    "low",
-    0x397e51,
-    0, 0.62, 0,
-    0.96, 0.75, 0.9
+  mesh(
+    g, "rock",
+    0x41874e,
+    0, .65, 0,
+    1, .8, 1
   );
 
   for (let i = 0; i < 7; i++) {
-    const angle = i * Math.PI * 2 / 7;
+    const a = i * 6.283 / 7;
 
-    part(
-      group,
-      "sphere",
-      0xe96983,
-      Math.cos(angle) * 0.62,
-      0.73,
-      Math.sin(angle) * 0.62,
-      0.14, 0.14, 0.14
+    mesh(
+      g, "sphere",
+      0xea6981,
+      Math.cos(a) * .7,
+      .72,
+      Math.sin(a) * .7,
+      .13, .13, .13
     );
   }
 
-  createResource(
-    "berries",
-    x,
-    z,
-    4,
-    group
-  );
+  putResource(g, "berries", 4, x, z);
 }
-
-function createGrass(x, z) {
-  const group = new THREE.Group();
-
-  for (let i = 0; i < 3; i++) {
-    const blade = part(
-      group,
-      "cone",
-      i % 2 ? 0x60ab67 : 0x418d54,
-      (i - 1) * 0.13,
-      0.24,
-      0,
-      0.1, 0.5, 0.1
-    );
-
-    blade.rotation.z = (i - 1) * 0.3;
-  }
-
-  group.position.set(
-    x,
-    height(x, z),
-    z
-  );
-
-  scene.add(group);
-}
-
-/* =====================================================
-   WORLD GENERATION
-   ===================================================== */
-
-for (let i = 0; i < 190; i++) {
-  const x =
-    (random(i, 2, 7) - 0.5) * 206;
-
-  const z =
-    (random(i, 7, 9) - 0.5) * 206;
-
-  if (Math.hypot(x, z) < 14) continue;
-
-  const chance = random(i, 13, 4);
-  const area = biome(x, z);
-
-  if (chance < 0.46) {
-    let kind = "oak";
-
-    if (area === "Blossom Ridge") {
-      kind = "cherry";
-    } else if (
-      area === "Ancient Woodland" &&
-      chance < 0.2
-    ) {
-      kind = "ancient";
-    }
-
-    createTree(x, z, kind);
-
-  } else if (chance < 0.70) {
-
-    createRock(x, z, chance > 0.64);
-
-  } else if (chance < 0.84) {
-
-    createBush(x, z);
-
-  } else {
-
-    createGrass(x, z);
-
-  }
-}
-
-/* =====================================================
-   THOUSANDS OF ANIMATED GRASS BLADES
-   ===================================================== */
-
-const grassMaterial = new THREE.MeshStandardMaterial({
-  color: 0x71c468,
-  side: THREE.DoubleSide,
-  roughness: 1
-});
-
-const grassGeometry = new THREE.BufferGeometry();
-
-grassGeometry.setAttribute(
-  "position",
-  new THREE.Float32BufferAttribute(
-    [
-      -0.075, 0, 0,
-       0.075, 0, 0,
-       0, 0.65, 0
-    ],
-    3
-  )
-);
-
-grassGeometry.setIndex([0, 1, 2]);
-grassGeometry.computeVertexNormals();
-
-grassMaterial.onBeforeCompile = shader => {
-  shader.uniforms.windTime = {
-    value: 0
-  };
-
-  grassMaterial.userData.windUniform =
-    shader.uniforms.windTime;
-
-  shader.vertexShader = shader.vertexShader.replace(
-    "#include <common>",
-    `
-      #include <common>
-      uniform float windTime;
-    `
-  );
-
-  shader.vertexShader = shader.vertexShader.replace(
-    "#include <begin_vertex>",
-    `
-      #include <begin_vertex>
-
-      transformed.x +=
-        sin(
-          windTime * 1.8 +
-          instanceMatrix[3].x * 0.3 +
-          instanceMatrix[3].z * 0.23
-        ) * 0.15 * position.y;
-    `
-  );
-};
-
-const grassCount = 4200;
-
-const grassInstances = new THREE.InstancedMesh(
-  grassGeometry,
-  grassMaterial,
-  grassCount
-);
-
-grassInstances.frustumCulled = false;
-
-const dummy = new THREE.Object3D();
-const grassColor = new THREE.Color();
-
-for (let i = 0; i < grassCount; i++) {
-  const x =
-    (random(i, 31, 1) - 0.5) * 200;
-
-  const z =
-    (random(i, 39, 7) - 0.5) * 200;
-
-  dummy.position.set(
-    x,
-    height(x, z) + 0.03,
-    z
-  );
-
-  dummy.rotation.set(
-    0,
-    random(i, 17, 2) * Math.PI * 2,
-    (random(i, 11, 8) - 0.5) * 0.27
-  );
-
-  dummy.scale.setScalar(
-    0.6 + random(i, 24, 3) * 1.3
-  );
-
-  dummy.updateMatrix();
-
-  grassInstances.setMatrixAt(
-    i,
-    dummy.matrix
-  );
-
-  grassColor.setHSL(
-    0.24 + random(i, 32, 12) * 0.08,
-    0.43 + random(i, 14, 6) * 0.2,
-    0.35 + random(i, 18, 2) * 0.18
-  );
-
-  grassInstances.setColorAt(
-    i,
-    grassColor
-  );
-}
-
-grassInstances.instanceMatrix.needsUpdate = true;
-
-if (grassInstances.instanceColor) {
-  grassInstances.instanceColor.needsUpdate = true;
-}
-
-scene.add(grassInstances);
-
-/* =====================================================
-   MOVING CLOUDS
-   ===================================================== */
-
-const clouds = [];
-
-for (let i = 0; i < 16; i++) {
-  const group = new THREE.Group();
-
-  const cloudMaterial = material(
-    i % 3 === 0 ? 0xffefdf : 0xf8fbff
-  );
-
-  for (let j = 0; j < 5; j++) {
-    const puff = new THREE.Mesh(
-      geometries.sphere,
-      cloudMaterial
-    );
-
-    puff.position.set(
-      (j - 2) * 2.6,
-      Math.sin(j * 2) * 0.5,
-      (j % 2) * 1.5
-    );
-
-    puff.scale.set(3.3, 1.15, 2);
-
-    group.add(puff);
-  }
-
-  group.position.set(
-    (random(i, 8, 91) - 0.5) * 230,
-    31 + random(i, 9, 92) * 20,
-    (random(i, 10, 93) - 0.5) * 230
-  );
-
-  scene.add(group);
-
-  clouds.push({
-    group,
-    speed:
-      0.25 + random(i, 4, 94) * 0.22
-  });
-}
-
-/* =====================================================
-   FIREFLIES
-   ===================================================== */
-
-const fireflies = [];
-
-for (let i = 0; i < 90; i++) {
-  const fireflyMaterial = new THREE.MeshBasicMaterial({
-    color: 0xfbe9a8,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false
-  });
-
-  const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(
-      0.065,
-      5,
-      4
-    ),
-    fireflyMaterial
-  );
-
-  const x =
-    (random(i, 37, 6) - 0.5) * 165;
-
-  const z =
-    (random(i, 44, 8) - 0.5) * 165;
-
-  mesh.position.set(
-    x,
-    height(x, z) +
-      1 +
-      random(i, 41, 5) * 3,
-    z
-  );
-
-  scene.add(mesh);
-
-  fireflies.push({
-    mesh,
-    x,
-    z,
-    phase:
-      random(i, 10, 4) *
-      Math.PI * 2
-  });
-}
-
-/* =====================================================
-   FLOWERS
-   ===================================================== */
-
-const flowers = [];
 
 for (let i = 0; i < 170; i++) {
-  const x =
-    (random(i, 19, 77) - 0.5) * 202;
+  const x = (hash(i, 2, 7) - .5) * 206;
+  const z = (hash(i, 8, 6) - .5) * 206;
 
-  const z =
-    (random(i, 20, 78) - 0.5) * 202;
+  if (Math.hypot(x, z) < 15) continue;
 
-  if (Math.hypot(x, z) < 8) continue;
+  const n = hash(i, 12, 3);
 
-  const group = new THREE.Group();
+  if (n < .48) {
+    tree(
+      x, z,
+      biome(x,z) === "Blossom Ridge" ? "cherry" :
+      biome(x,z) === "Elder Forest" && n < .2
+        ? "giant" : "normal"
+    );
+  } else if (n < .74) {
+    rock(x, z, n > .66);
+  } else {
+    bush(x, z);
+  }
+}
 
-  part(
-    group,
-    "cylinder",
-    0x408b4c,
-    0, 0.23, 0,
-    0.025, 0.44, 0.025
+/* Instanced grass is much faster than
+   thousands of separate grass meshes. */
+
+const grassGeometry = new THREE.ConeGeometry(
+  .12, .7, 3
+);
+
+const grass = new THREE.InstancedMesh(
+  grassGeometry,
+  material(0x69af64),
+  2800
+);
+
+const dummy = new THREE.Object3D();
+
+for (let i = 0; i < 2800; i++) {
+  const x = (hash(i, 20, 4) - .5) * 205;
+  const z = (hash(i, 21, 7) - .5) * 205;
+
+  dummy.position.set(
+    x, terrainY(x, z) + .25, z
+  );
+  dummy.rotation.y = hash(i, 24, 1) * 6.283;
+  dummy.scale.setScalar(.5 + hash(i, 28, 3));
+  dummy.updateMatrix();
+  grass.setMatrixAt(i, dummy.matrix);
+}
+
+grass.instanceMatrix.needsUpdate = true;
+scene.add(grass);
+
+/* Flowers */
+
+for (let i = 0; i < 120; i++) {
+  const x = (hash(i, 30, 1) - .5) * 200;
+  const z = (hash(i, 31, 4) - .5) * 200;
+  const g = new THREE.Group();
+
+  mesh(
+    g, "trunk",
+    0x489354,
+    0, .25, 0,
+    .035, .5, .035
   );
 
-  const colors = [
-    0xffca85,
-    0xf0b6df,
-    0xc6c3ff,
-    0xfcebad
-  ];
-
-  const color = colors[i % 4];
-
   for (let j = 0; j < 5; j++) {
-    const angle =
-      j * Math.PI * 2 / 5;
+    const a = j * 6.283 / 5;
 
-    part(
-      group,
-      "sphere",
-      color,
-      Math.cos(angle) * 0.14,
-      0.49,
-      Math.sin(angle) * 0.14,
-      0.12, 0.08, 0.12
+    mesh(
+      g, "sphere",
+      i % 2 ? 0xffbed9 : 0xffd38a,
+      Math.cos(a) * .14,
+      .55,
+      Math.sin(a) * .14,
+      .14, .09, .14
     );
   }
 
-  part(
-    group,
-    "sphere",
-    0xffe492,
-    0, 0.49, 0,
-    0.095, 0.09, 0.095,
-    true
-  );
-
-  group.position.set(
-    x,
-    height(x, z),
-    z
-  );
-
-  scene.add(group);
+  g.position.set(x, terrainY(x,z), z);
+  scene.add(g);
 
   flowers.push({
-    group,
-    phase:
-      random(i, 5, 2) *
-      Math.PI * 2
+    g,
+    phase: hash(i, 41, 5) * 6
   });
 }
 
-/* =====================================================
-   PARTICLE EFFECTS
-   ===================================================== */
+/* Animated sky clouds */
 
-const particles = [];
+for (let i = 0; i < 14; i++) {
+  const g = new THREE.Group();
 
-function burst(
-  position,
-  color = 0x9dfbe0,
-  count = 24,
-  power = 5
-) {
-  const geometry = new THREE.SphereGeometry(
-    0.075,
-    5,
-    4
+  for (let j = 0; j < 5; j++) {
+    mesh(
+      g, "sphere",
+      0xffffff,
+      (j - 2) * 2.3,
+      Math.sin(j * 2) * .35,
+      (j % 2) * 1.1,
+      3.3, 1.25, 2
+    );
+  }
+
+  g.position.set(
+    (hash(i, 40, 2) - .5) * 230,
+    34 + hash(i, 42, 4) * 15,
+    (hash(i, 43, 6) - .5) * 230
   );
 
-  const particleMaterial =
-    new THREE.MeshBasicMaterial({
-      color,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending
-    });
-
-  for (let i = 0; i < count; i++) {
-    const object = new THREE.Mesh(
-      geometry,
-      particleMaterial
-    );
-
-    object.position.copy(position);
-
-    const angle =
-      Math.random() * Math.PI * 2;
-
-    const elevation =
-      Math.random() * Math.PI;
-
-    const velocity =
-      power * (0.3 + Math.random() * 0.7);
-
-    scene.add(object);
-
-    particles.push({
-      object,
-
-      velocity: new THREE.Vector3(
-        Math.cos(angle) *
-          Math.sin(elevation) *
-          velocity,
-
-        Math.cos(elevation) *
-          velocity * 0.75 + 1,
-
-        Math.sin(angle) *
-          Math.sin(elevation) *
-          velocity
-      ),
-
-      age: 0,
-      life:
-        0.6 + Math.random() * 0.6
-    });
-  }
+  scene.add(g);
+  clouds.push(g);
 }
 
-function updateEffects(dt) {
-  const t = worldTime;
-
-  waterUniforms.time.value = t;
-
-  if (grassMaterial.userData.windUniform) {
-    grassMaterial.userData.windUniform.value = t;
-  }
-
-  for (const cloud of clouds) {
-    cloud.group.position.x +=
-      cloud.speed * dt;
-
-    if (cloud.group.position.x > 145) {
-      cloud.group.position.x = -145;
-    }
-  }
-
-  for (const tree of animatedTrees) {
-    tree.group.rotation.z =
-      Math.sin(t * 0.8 + tree.phase) *
-      tree.sway;
-  }
-
-  for (const firefly of fireflies) {
-    firefly.mesh.position.x =
-      firefly.x +
-      Math.sin(
-        t * 0.55 + firefly.phase
-      ) * 1.8;
-
-    firefly.mesh.position.y =
-      height(firefly.x, firefly.z) +
-      1.5 +
-      Math.sin(
-        t * 2 + firefly.phase
-      ) * 0.6;
-
-    firefly.mesh.material.opacity =
-      0.5 +
-      0.4 *
-      Math.pow(
-        Math.sin(t * 2 + firefly.phase),
-        2
-      );
-  }
-
-  for (const flower of flowers) {
-    flower.group.rotation.z =
-      Math.sin(
-        t * 1.3 + flower.phase
-      ) * 0.08;
-  }
-
-  for (
-    let i = particles.length - 1;
-    i >= 0;
-    i--
-  ) {
-    const p = particles[i];
-
-    p.age += dt;
-
-    p.object.position.addScaledVector(
-      p.velocity,
-      dt
-    );
-
-    p.velocity.y -= 9 * dt;
-
-    p.object.scale.setScalar(
-      Math.max(
-        0.01,
-        1 - p.age / p.life
-      )
-    );
-
-    if (p.age >= p.life) {
-      scene.remove(p.object);
-      particles.splice(i, 1);
-    }
-  }
-}
-
-/* =====================================================
-   PLAYER CHARACTER
-   ===================================================== */
+/* ==================================================
+   PLAYER MODEL
+   ================================================== */
 
 const player = new THREE.Group();
-const visual = new THREE.Group();
+const playerModel = new THREE.Group();
+player.add(playerModel);
 
-player.add(visual);
-
-part(
-  visual,
-  "box",
-  0x326d9b,
-  0, 1.28, 0,
-  0.78, 1, 0.45
+mesh(
+  playerModel, "box",
+  0x3476a3,
+  0, 1.35, 0,
+  .8, 1, .48
 );
 
-part(
-  visual,
-  "sphere",
-  0xd7a982,
-  0, 2.08, 0,
-  0.43, 0.47, 0.42
+mesh(
+  playerModel, "sphere",
+  0xe1b28c,
+  0, 2.12, 0,
+  .43, .46, .43
 );
 
-part(
-  visual,
-  "sphere",
-  0x3b3031,
-  0, 2.43, 0.08,
-  0.47, 0.2, 0.42
+mesh(
+  playerModel, "sphere",
+  0x3a2d2f,
+  0, 2.43, .06,
+  .46, .2, .45
 );
 
 const arms = [];
@@ -1210,2118 +566,1444 @@ const legs = [];
 
 for (const side of [-1, 1]) {
   const arm = new THREE.Group();
+  arm.position.set(side * .56, 1.68, 0);
 
-  arm.position.set(
-    side * 0.54,
-    1.66,
-    0
+  mesh(
+    arm, "box",
+    0x3476a3,
+    0, -.39, 0,
+    .25, .78, .31
   );
 
-  part(
-    arm,
-    "box",
-    0x326d9b,
-    0, -0.37, 0,
-    0.27, 0.77, 0.3
-  );
-
-  visual.add(arm);
+  playerModel.add(arm);
   arms.push(arm);
 
   const leg = new THREE.Group();
+  leg.position.set(side * .2, .85, 0);
 
-  leg.position.set(
-    side * 0.21,
-    0.79,
-    0
+  mesh(
+    leg, "box",
+    0x304e77,
+    0, -.4, 0,
+    .29, .8, .34
   );
 
-  part(
-    leg,
-    "box",
-    0x31496d,
-    0, -0.4, 0,
-    0.3, 0.8, 0.33
-  );
-
-  visual.add(leg);
+  playerModel.add(leg);
   legs.push(leg);
 
-  part(
-    visual,
-    "sphere",
+  mesh(
+    playerModel, "sphere",
     0xffffff,
-    side * 0.18,
-    2.12,
-    -0.4,
-    0.08, 0.08, 0.045
+    side * .18, 2.13, -.4,
+    .085, .09, .05
   );
 
-  part(
-    visual,
-    "sphere",
-    0x24364a,
-    side * 0.18,
-    2.12,
-    -0.44,
-    0.043, 0.05, 0.025
+  mesh(
+    playerModel, "sphere",
+    0x203647,
+    side * .18, 2.13, -.45,
+    .043, .06, .03
   );
 }
 
 player.position.set(
   saved.pos?.[0] ?? 0,
-  saved.pos?.[1] ?? height(0, 0),
+  saved.pos?.[1] ?? terrainY(0,0),
   saved.pos?.[2] ?? 0
 );
 
 scene.add(player);
 
-let yaw = 0;
-let pitch = 0.12;
+/* ==================================================
+   ORIGINAL CREATURES + LOCAL AI
+   ================================================== */
 
-let verticalVelocity = 0;
-let grounded = false;
-
-/* =====================================================
-   CREATURE GENERATION
-   ===================================================== */
+const species = {
+  Bloomlet: {
+    color:0x84d78b, belly:0xd1f4b3,
+    accent:0x499c6b, emoji:"🌿",
+    element:"Nature", speed:2
+  },
+  Cinderfox: {
+    color:0xee9759, belly:0xffd4a2,
+    accent:0xb95740, emoji:"🔥",
+    element:"Fire", speed:3
+  },
+  Tidepup: {
+    color:0x70b9e0, belly:0xd3f2ff,
+    accent:0x438eb7, emoji:"💧",
+    element:"Water", speed:2.5
+  },
+  Sparkit: {
+    color:0xf4d36f, belly:0xffefad,
+    accent:0xb58b42, emoji:"⚡",
+    element:"Electric", speed:3.2
+  },
+  Moonhorn: {
+    color:0xcbb9ee, belly:0xf9f6ff,
+    accent:0x886dc7, emoji:"✨",
+    element:"Mystic", speed:2
+  },
+  Brambleon: {
+    color:0x63b49c, belly:0xb2dfb8,
+    accent:0x357c60, emoji:"🌲",
+    element:"Forest", speed:1.8
+  }
+};
 
 const wild = [];
-let buddy = null;
+let companion = null;
 
-function createCreature(
-  name,
-  x,
-  z,
-  isBuddy = false
-) {
-  const type = types[name];
-
+function createCreature(name, x, z, friendly = false) {
+  const spec = species[name];
   const root = new THREE.Group();
   const model = new THREE.Group();
-
   root.add(model);
 
-  const scale =
-    name === "Brambleon" ? 1.35 :
-    name === "Moonhorn" ? 1.15 :
-    0.9;
-
+  const scale = name === "Brambleon" ? 1.3 :
+                name === "Moonhorn" ? 1.1 : .88;
   model.scale.setScalar(scale);
 
-  part(
-    model,
-    "sphere",
-    type.body,
-    0, 1.13, 0,
-    0.84, 0.76, 0.72
+  mesh(
+    model, "sphere",
+    spec.color,
+    0, 1.15, 0,
+    .84, .75, .7
   );
 
-  part(
-    model,
-    "sphere",
-    type.trim,
-    0, 1.01, -0.49,
-    0.54, 0.49, 0.28
+  mesh(
+    model, "sphere",
+    spec.belly,
+    0, 1, -.48,
+    .55, .5, .27
   );
 
-  part(
-    model,
-    "sphere",
-    type.body,
-    0, 1.91, -0.23,
-    0.69, 0.67, 0.63
+  mesh(
+    model, "sphere",
+    spec.color,
+    0, 1.92, -.25,
+    .7, .66, .62
   );
+
+  const ears = [];
 
   for (const side of [-1, 1]) {
-    const ear = part(
-      model,
-      "cone",
-      type.accent,
-      side * 0.43,
-      2.58,
-      -0.19,
-      0.23,
-      0.7,
-      0.24
+    const ear = mesh(
+      model, "cone",
+      spec.accent,
+      side * .44, 2.59, -.2,
+      .24, .69, .25
     );
 
-    ear.rotation.z =
-      -side * 0.23;
+    ear.rotation.z = side * -.2;
+    ears.push(ear);
 
-    part(
-      model,
-      "sphere",
+    mesh(
+      model, "sphere",
       0xffffff,
-      side * 0.25,
-      2.02,
-      -0.76,
-      0.19,
-      0.22,
-      0.08
+      side * .26, 2.04, -.76,
+      .18, .22, .08
     );
 
-    part(
-      model,
-      "sphere",
-      0x28374a,
-      side * 0.25,
-      2.02,
-      -0.85,
-      0.09,
-      0.13,
-      0.04
+    mesh(
+      model, "sphere",
+      0x21374b,
+      side * .26, 2.04, -.84,
+      .09, .12, .04
     );
 
-    for (const front of [-1, 1]) {
-      part(
-        model,
-        "sphere",
-        type.body,
-        side * 0.43,
-        0.46,
-        front * 0.4,
-        0.24, 0.31, 0.28
+    for (const f of [-1, 1]) {
+      mesh(
+        model, "sphere",
+        spec.color,
+        side * .42, .45, f * .4,
+        .25, .3, .28
       );
     }
   }
 
-  part(
-    model,
-    "sphere",
-    0xf5a2ae,
-    0, 1.75, -0.83,
-    0.13, 0.09, 0.07
+  mesh(
+    model, "sphere",
+    0xf4a6b0,
+    0, 1.75, -.84,
+    .13, .09, .07
   );
 
-  part(
-    model,
-    "sphere",
-    type.body,
-    0, 1.12, 0.69,
-    0.36, 0.4, 0.49
+  mesh(
+    model, "sphere",
+    spec.color,
+    0, 1.08, .7,
+    .36, .4, .5
   );
 
   if (name === "Moonhorn") {
-    part(
-      model,
-      "cone",
-      0xe8f4ff,
-      0, 2.8, -0.3,
-      0.16, 0.83, 0.17
+    mesh(
+      model, "cone",
+      0xf0f4ff,
+      0, 2.82, -.34,
+      .16, .85, .16
     );
   }
 
   if (name === "Cinderfox") {
-    part(
-      model,
-      "cone",
-      0xffcd59,
-      0, 1.3, 1.1,
-      0.28, 0.8, 0.25,
+    mesh(
+      model, "cone",
+      0xffc666,
+      0, 1.4, 1.05,
+      .27, .74, .25,
       true
     );
   }
 
-  if (name === "Sparkit") {
-    const tail = part(
-      model,
-      "box",
-      0xffda64,
-      0, 1.2, 1.04,
-      0.28, 0.26, 1
-    );
-
-    tail.rotation.x = 0.45;
-  }
-
-  if (name === "Brambleon") {
-    for (let i = 0; i < 4; i++) {
-      part(
-        model,
-        "cone",
-        type.accent,
-        0,
-        1.7,
-        i * 0.35,
-        0.22, 0.48, 0.22
-      );
-    }
-  }
-
-  root.position.set(
-    x,
-    height(x, z),
-    z
-  );
-
-  scene.add(root);
-
   const unit = {
-    name,
-    type,
-    root,
-    model,
-    hp: 100,
-    home: [x, z],
-    state: "idle",
-    timer: 0,
-    angle:
-      random(x, z, 6) *
-      Math.PI * 2,
-    phase:
-      random(x, z, 8) *
-      Math.PI * 2,
-    isBuddy
+    name, spec, root, model, ears,
+    hp:100,
+    state:"idle",
+    timer:0,
+    angle:hash(x,z,8)*6.283,
+    homeX:x,
+    homeZ:z,
+    phase:hash(x,z,9)*6.283,
+    friendly,
+    scale
   };
 
-  root.userData.unit = unit;
+  root.position.set(x, terrainY(x,z), z);
+  root.userData.creature = unit;
+  scene.add(root);
 
-  if (!isBuddy) {
-    wild.push(unit);
-  }
+  if (!friendly) wild.push(unit);
 
   return unit;
 }
 
-/* =====================================================
-   POPULATE CREATURES
-   ===================================================== */
+const names = Object.keys(species);
 
 for (let i = 0; i < 30; i++) {
-  const angle =
-    random(i, 2, 16) *
-    Math.PI * 2;
+  const a = hash(i,3,7)*Math.PI*2;
+  const d = 15 + hash(i,5,4)*83;
 
-  const distance =
-    15 + random(i, 5, 18) * 87;
-
-  const x =
-    Math.cos(angle) * distance;
-
-  const z =
-    Math.sin(angle) * distance;
-
-  const name = species[
-    Math.floor(
-      random(i, 9, 1) *
-      species.length
-    )
-  ];
-
-  createCreature(name, x, z);
+  createCreature(
+    names[Math.floor(hash(i,7,2)*names.length)],
+    Math.cos(a)*d,
+    Math.sin(a)*d
+  );
 }
 
-/* =====================================================
+/* ==================================================
    COMPANION PARTY
-   ===================================================== */
+   ================================================== */
 
-function drawParty() {
+function redrawParty() {
   $("party").replaceChildren();
 
   for (let i = 0; i < 5; i++) {
-    const slot =
-      document.createElement("div");
+    const slot = document.createElement("div");
+    slot.className = "slot";
 
-    slot.className =
-      "party-item" +
-      (
-        party[i] && selected === i
-          ? " active"
-          : ""
-      );
+    if (party[i] && i === selected) {
+      slot.classList.add("selected");
+    }
 
-    slot.textContent =
-      party[i]
-        ? types[party[i]].emoji
-        : "＋";
+    slot.textContent = party[i]
+      ? species[party[i]]?.emoji || "🐾"
+      : "＋";
 
-    const label =
-      document.createElement("small");
+    const number = document.createElement("small");
+    number.textContent = i+1;
+    slot.append(number);
 
-    label.textContent = i + 1;
-
-    slot.append(label);
     $("party").append(slot);
   }
 }
 
-function setBuddy(index) {
-  if (!party[index]) return;
+function selectCompanion(index) {
+  if (!species[party[index]]) return;
 
   selected = index;
 
-  if (buddy) {
-    scene.remove(buddy.root);
-    buddy = null;
+  if (companion) {
+    scene.remove(companion.root);
   }
 
-  buddy = createCreature(
+  companion = createCreature(
     party[index],
-    player.position.x + 2,
-    player.position.z + 2,
+    player.position.x+2,
+    player.position.z+2,
     true
   );
 
-  $("buddyName").textContent =
-    types[buddy.name].emoji +
-    " " +
-    buddy.name;
+  $("companion").textContent =
+    species[party[index]].emoji + " " + party[index];
 
-  $("buddyMode").textContent =
-    types[buddy.name].element +
-    " · E to assist";
+  $("companionState").textContent =
+    species[party[index]].element + " · Following";
 
-  drawParty();
+  redrawParty();
 }
 
-if (party.length) {
-  setBuddy(
-    Math.min(selected, party.length - 1)
-  );
+if (party.length && species[party[selected]]) {
+  selectCompanion(selected);
 } else {
-  drawParty();
+  redrawParty();
 }
 
-/* =====================================================
-   CREATURE BEHAVIOR AND ANIMATIONS
-   ===================================================== */
+/* ==================================================
+   CREATURE AI — IDLE, WANDER, FLEE, FOLLOW
+   ================================================== */
 
-function updateCreatures(dt) {
-  for (const creature of wild) {
-    creature.timer -= dt;
+function updateCreatureAI(dt) {
+  for (const unit of wild) {
+    unit.timer -= dt;
 
-    if (creature.timer <= 0) {
-      creature.state =
-        random(
-          creature.root.position.x + worldTime,
-          creature.root.position.z,
-          7
-        ) > 0.25
-          ? "wander"
-          : "idle";
+    if (unit.timer <= 0) {
+      if (unit.state === "flee") {
+        unit.state = "wander";
+      } else {
+        unit.state = Math.random() < .28
+          ? "idle" : "wander";
+      }
 
-      creature.timer =
-        1.7 + Math.random() * 3;
-
-      creature.angle +=
-        (Math.random() - 0.5) * 2.6;
+      unit.timer = 1.5 + Math.random()*3;
+      unit.angle += (Math.random()-.5)*2.8;
     }
 
-    if (creature.state === "wander") {
-      const step =
-        creature.type.speed *
-        0.35 *
-        dt;
+    if (unit.state !== "idle") {
+      const speed = unit.spec.speed *
+        (unit.state === "flee" ? 1.7 : .45);
 
-      const nx =
-        creature.root.position.x +
-        Math.sin(creature.angle) * step;
-
-      const nz =
-        creature.root.position.z +
-        Math.cos(creature.angle) * step;
+      const nx = unit.root.position.x +
+        Math.sin(unit.angle)*speed*dt;
+      const nz = unit.root.position.z +
+        Math.cos(unit.angle)*speed*dt;
 
       if (
-        Math.hypot(
-          nx - creature.home[0],
-          nz - creature.home[1]
-        ) < 10 &&
-        Math.abs(nx) < WORLD - 3 &&
-        Math.abs(nz) < WORLD - 3
+        Math.hypot(nx-unit.homeX,nz-unit.homeZ)<14 &&
+        Math.abs(nx)<SIZE-3 &&
+        Math.abs(nz)<SIZE-3
       ) {
-        creature.root.position.x = nx;
-        creature.root.position.z = nz;
+        unit.root.position.x = nx;
+        unit.root.position.z = nz;
       } else {
-        creature.angle += Math.PI;
+        unit.angle += Math.PI;
       }
     }
 
-    creature.root.position.y = height(
-      creature.root.position.x,
-      creature.root.position.z
+    unit.root.position.y = terrainY(
+      unit.root.position.x,
+      unit.root.position.z
     );
 
-    creature.root.rotation.y =
-      creature.angle;
+    unit.root.rotation.y = unit.angle;
+    animateCreature(unit, dt);
+  }
 
-    creature.model.position.y =
-      Math.sin(
-        worldTime * 3 +
-        creature.phase
-      ) * 0.09;
+  if (companion) {
+    const p = companion.root.position;
+    const dx = player.position.x-p.x;
+    const dz = player.position.z-p.z;
+    const d = Math.hypot(dx,dz);
 
-    creature.model.rotation.z =
-      Math.sin(
-        worldTime * 2 +
-        creature.phase
-      ) * 0.025;
-
-    const baseScale =
-      creature.name === "Brambleon"
-        ? 1.35
-        : creature.name === "Moonhorn"
-          ? 1.15
-          : 0.9;
-
-    creature.model.scale.y =
-      baseScale *
-      (
-        1 +
-        0.02 *
-        Math.sin(
-          worldTime * 2.2 +
-          creature.phase
-        )
+    if (d>35) {
+      p.x=player.position.x+2;
+      p.z=player.position.z+2;
+    } else if (d>3) {
+      const step = Math.min(
+        d-3, companion.spec.speed*2.1*dt
       );
+      p.x += dx/d*step;
+      p.z += dz/d*step;
+      companion.root.rotation.y =
+        Math.atan2(-dx,-dz);
+    }
+
+    p.y=terrainY(p.x,p.z);
+    animateCreature(companion,dt);
   }
-
-  if (!buddy) return;
-
-  const position = buddy.root.position;
-
-  const dx =
-    player.position.x - position.x;
-
-  const dz =
-    player.position.z - position.z;
-
-  const distance = Math.hypot(dx, dz);
-
-  if (distance > 32) {
-    position.x =
-      player.position.x + 2;
-
-    position.z =
-      player.position.z + 2;
-
-  } else if (distance > 2.8) {
-
-    const step = Math.min(
-      distance - 2.8,
-      buddy.type.speed * 2.3 * dt
-    );
-
-    position.x +=
-      dx / distance * step;
-
-    position.z +=
-      dz / distance * step;
-
-    buddy.root.rotation.y =
-      Math.atan2(-dx, -dz);
-  }
-
-  position.y = height(
-    position.x,
-    position.z
-  );
-
-  buddy.model.position.y =
-    Math.sin(worldTime * 4) * 0.12;
-
-  buddy.model.rotation.z =
-    Math.sin(worldTime * 2) * 0.035;
 }
 
-/* =====================================================
-   PLAYER MOVEMENT
-   ===================================================== */
+function animateCreature(unit, dt) {
+  const t = time+unit.phase;
 
-function movementDirection() {
-  const fx = -Math.sin(yaw);
-  const fz = -Math.cos(yaw);
+  unit.model.position.y =
+    Math.sin(t*3.3)*.09;
 
-  const rx = Math.cos(yaw);
-  const rz = -Math.sin(yaw);
+  unit.model.rotation.z =
+    Math.sin(t*2)*.025;
 
-  let x = 0;
-  let z = 0;
+  unit.model.scale.y =
+    unit.scale*(1+Math.sin(t*2.6)*.018);
 
-  if (keys.KeyW) {
-    x += fx;
-    z += fz;
-  }
+  unit.ears[0].rotation.z =
+    .2+Math.sin(t*3)*.07;
 
-  if (keys.KeyS) {
-    x -= fx;
-    z -= fz;
-  }
-
-  if (keys.KeyA) {
-    x -= rx;
-    z -= rz;
-  }
-
-  if (keys.KeyD) {
-    x += rx;
-    z += rz;
-  }
-
-  const length = Math.hypot(x, z);
-
-  if (!length) {
-    return {
-      x: 0,
-      z: 0,
-      moving: false
-    };
-  }
-
-  return {
-    x: x / length,
-    z: z / length,
-    moving: true
-  };
+  unit.ears[1].rotation.z =
+    -.2-Math.sin(t*3)*.07;
 }
 
-function lookDirection() {
+/* ==================================================
+   3D PLAYER MOVEMENT
+   ================================================== */
+
+function lookVector() {
   return new THREE.Vector3(
-    -Math.sin(yaw) * Math.cos(pitch),
+    -Math.sin(yaw)*Math.cos(pitch),
     Math.sin(pitch),
-    -Math.cos(yaw) * Math.cos(pitch)
+    -Math.cos(yaw)*Math.cos(pitch)
   );
 }
 
-function updatePlayer(dt) {
-  const movement = movementDirection();
+function updateMovement(dt) {
+  const fx=-Math.sin(yaw);
+  const fz=-Math.cos(yaw);
+  const rx=Math.cos(yaw);
+  const rz=-Math.sin(yaw);
 
-  const sprint =
-    keys.ShiftLeft ||
-    keys.ShiftRight;
+  let x=0,z=0;
 
-  const speed =
-    flying ? 13 :
-    sprint ? 10 : 6.5;
+  if(keys.KeyW){x+=fx;z+=fz;}
+  if(keys.KeyS){x-=fx;z-=fz;}
+  if(keys.KeyD){x+=rx;z+=rz;}
+  if(keys.KeyA){x-=rx;z-=rz;}
 
-  player.position.x =
-    THREE.MathUtils.clamp(
-      player.position.x +
-        movement.x * speed * dt,
-      -WORLD + 2,
-      WORLD - 2
-    );
+  const length=Math.hypot(x,z);
+  const moving=length>.01;
 
-  player.position.z =
-    THREE.MathUtils.clamp(
-      player.position.z +
-        movement.z * speed * dt,
-      -WORLD + 2,
-      WORLD - 2
-    );
+  if(moving){
+    x/=length;
+    z/=length;
+  }
 
-  const floor = height(
-    player.position.x,
-    player.position.z
+  const sprint=keys.ShiftLeft||keys.ShiftRight;
+  const speed=flying?13:sprint?10:6.5;
+
+  player.position.x=THREE.MathUtils.clamp(
+    player.position.x+x*speed*dt,
+    -SIZE+3,SIZE-3
   );
 
-  if (flying) {
-    const up =
-      keys.Space ? 1 : 0;
+  player.position.z=THREE.MathUtils.clamp(
+    player.position.z+z*speed*dt,
+    -SIZE+3,SIZE-3
+  );
 
-    const down =
-      keys.KeyX ? 1 : 0;
+  if(moving){
+    player.rotation.y=Math.atan2(-x,-z);
+  }
 
-    player.position.y +=
-      (up - down) * speed * dt;
+  const floor=terrainY(
+    player.position.x,player.position.z
+  );
 
-    player.position.y =
-      THREE.MathUtils.clamp(
-        player.position.y,
-        -2,
-        100
-      );
+  if(flying){
+    const up=(keys.Space?1:0)-(keys.KeyX?1:0);
+    player.position.y+=up*speed*dt;
+    player.position.y=THREE.MathUtils.clamp(
+      player.position.y,floor,90
+    );
+    verticalSpeed=0;
+  }else{
+    verticalSpeed-=23*dt;
 
-    verticalVelocity = 0;
-    grounded = false;
-
-  } else {
-
-    verticalVelocity -= 23 * dt;
-
-    if (keys.Space && grounded) {
-      verticalVelocity = 9;
-      grounded = false;
+    if(keys.Space && grounded){
+      verticalSpeed=9;
+      grounded=false;
     }
 
-    player.position.y +=
-      verticalVelocity * dt;
+    player.position.y+=verticalSpeed*dt;
 
-    if (player.position.y <= floor) {
-      player.position.y = floor;
-      verticalVelocity = 0;
-      grounded = true;
+    if(player.position.y<=floor){
+      player.position.y=floor;
+      verticalSpeed=0;
+      grounded=true;
     }
   }
 
-  if (movement.moving) {
-    player.rotation.y =
-      Math.atan2(
-        -movement.x,
-        -movement.z
-      );
-  }
-
-  const step = movement.moving
-    ? Math.sin(worldTime * 11) * 0.55
-    : 0;
-
-  arms[0].rotation.x = step;
-  arms[1].rotation.x = -step;
-
-  legs[0].rotation.x = -step;
-  legs[1].rotation.x = step;
+  const swing=moving?Math.sin(time*11)*.5:0;
+  arms[0].rotation.x=swing;
+  arms[1].rotation.x=-swing;
+  legs[0].rotation.x=-swing;
+  legs[1].rotation.x=swing;
 }
 
-/* =====================================================
-   CAMERA
-   ===================================================== */
+function updateCamera(dt) {
+  const eye=player.position.clone();
+  eye.y+=1.7;
 
-function updateCamera() {
-  const eye = player.position.clone().add(
-    new THREE.Vector3(
-      0,
-      1.75,
-      0
-    )
-  );
+  const look=lookVector();
 
-  const direction = lookDirection();
-
-  if (cameraView === 1) {
+  if(firstPerson){
+    playerModel.visible=false;
     camera.position.copy(eye);
+    camera.rotation.set(pitch,yaw,0,"YXZ");
+  }else{
+    playerModel.visible=true;
 
-    camera.rotation.set(
-      pitch,
-      yaw,
-      0,
-      "YXZ"
-    );
+    const desired=eye.clone()
+      .addScaledVector(look,-6);
 
-    visual.visible = false;
-
-  } else {
-
-    visual.visible = true;
-
-    const desired = eye.clone()
-      .addScaledVector(
-        direction,
-        -6
-      );
-
-    desired.y += 1.4;
+    desired.y+=1.8;
 
     camera.position.lerp(
       desired,
-      0.28
+      Math.min(1,dt*12)
     );
 
     camera.lookAt(
-      eye.clone()
-        .addScaledVector(
-          direction,
-          9
-        )
+      eye.clone().addScaledVector(look,10)
     );
   }
 }
 
-/* =====================================================
-   CREATURE TARGETING
-   ===================================================== */
+/* ==================================================
+   GRAPHICAL EFFECTS
+   ================================================== */
 
-const raycaster = new THREE.Raycaster();
+const particles=[];
+const flyingOrbs=[];
+
+function burst(position,color,count=18) {
+  const geometry=new THREE.SphereGeometry(.075,5,4);
+  const effectMaterial=new THREE.MeshBasicMaterial({
+    color,
+    transparent:true,
+    blending:THREE.AdditiveBlending,
+    depthWrite:false
+  });
+
+  for(let i=0;i<count;i++){
+    const object=new THREE.Mesh(
+      geometry,effectMaterial
+    );
+
+    object.position.copy(position);
+    scene.add(object);
+
+    particles.push({
+      object,
+      velocity:new THREE.Vector3(
+        (Math.random()-.5)*8,
+        Math.random()*6,
+        (Math.random()-.5)*8
+      ),
+      life:.5+Math.random()*.6,
+      age:0
+    });
+  }
+}
+
+function throwOrb(start,end,color) {
+  const object=new THREE.Mesh(
+    new THREE.SphereGeometry(.23,12,9),
+    material(color,true)
+  );
+
+  scene.add(object);
+
+  flyingOrbs.push({
+    object,
+    start,
+    end,
+    elapsed:0
+  });
+}
+
+function updateEffects(dt) {
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.age+=dt;
+    p.object.position.addScaledVector(
+      p.velocity,dt
+    );
+    p.velocity.y-=10*dt;
+
+    const s=Math.max(.01,1-p.age/p.life);
+    p.object.scale.setScalar(s);
+
+    if(p.age>=p.life){
+      scene.remove(p.object);
+      particles.splice(i,1);
+    }
+  }
+
+  for(let i=flyingOrbs.length-1;i>=0;i--){
+    const p=flyingOrbs[i];
+    p.elapsed+=dt;
+    const t=Math.min(1,p.elapsed/.5);
+
+    p.object.position.lerpVectors(
+      p.start,p.end,t
+    );
+    p.object.position.y+=
+      Math.sin(t*Math.PI)*2.2;
+
+    if(t>=1){
+      burst(p.end,p.object.material.color.getHex(),14);
+      scene.remove(p.object);
+      flyingOrbs.splice(i,1);
+    }
+  }
+
+  for(const tree of trees){
+    tree.object.rotation.z=
+      Math.sin(time*.85+tree.phase)*.012;
+  }
+
+  for(const flower of flowers){
+    flower.g.rotation.z=
+      Math.sin(time*1.4+flower.phase)*.07;
+  }
+
+  for(const cloud of clouds){
+    cloud.position.x+=dt*.25;
+    if(cloud.position.x>145){
+      cloud.position.x=-145;
+    }
+  }
+
+  water.position.y=-1.8+
+    Math.sin(time*1.3)*.08;
+}
+
+/* ==================================================
+   TARGETING AND COMBAT
+   ================================================== */
+
+const raycaster=new THREE.Raycaster();
 
 function aimedCreature() {
   raycaster.setFromCamera(
-    new THREE.Vector2(0, 0),
-    camera
+    new THREE.Vector2(0,0),camera
   );
 
-  raycaster.far = 25;
+  raycaster.far=35;
 
-  const hits =
-    raycaster.intersectObjects(
-      wild.map(c => c.root),
-      true
-    );
+  const hits=raycaster.intersectObjects(
+    wild.map(c=>c.root),true
+  );
 
-  if (!hits.length) return null;
+  if(!hits.length)return null;
 
-  let object = hits[0].object;
+  let object=hits[0].object;
 
-  while (
-    object &&
-    !object.userData.unit
-  ) {
-    object = object.parent;
+  while(object && !object.userData.creature){
+    object=object.parent;
   }
 
-  return object?.userData.unit || null;
+  return object?.userData.creature||null;
 }
 
-function nearestCreature(range = 19) {
-  const target = aimedCreature();
+function nearestCreature(max=17) {
+  const aimed=aimedCreature();
 
-  if (
-    target &&
-    target.root.position.distanceTo(
+  if(
+    aimed &&
+    aimed.root.position.distanceTo(player.position)<max
+  ){
+    return aimed;
+  }
+
+  let best=max;
+  let target=null;
+
+  for(const unit of wild){
+    const d=unit.root.position.distanceTo(
       player.position
-    ) < range
-  ) {
-    return target;
-  }
+    );
 
-  let best = range;
-  let selectedCreature = null;
-
-  for (const creature of wild) {
-    const distance =
-      creature.root.position.distanceTo(
-        player.position
-      );
-
-    if (distance < best) {
-      best = distance;
-      selectedCreature = creature;
+    if(d<best){
+      best=d;
+      target=unit;
     }
   }
 
-  return selectedCreature;
+  return target;
 }
-
-/* =====================================================
-   CAPTURE AND ATTACK PROJECTILES
-   ===================================================== */
-
-const projectiles = [];
-
-function createProjectile(
-  from,
-  to,
-  color
-) {
-  const object = part(
-    scene,
-    "sphere",
-    color,
-    0, 0, 0,
-    0.23, 0.23, 0.23,
-    true
-  );
-
-  projectiles.push({
-    object,
-    from: from.clone(),
-    to: to.clone(),
-    progress: 0
-  });
-}
-
-function updateProjectiles(dt) {
-  for (
-    let i = projectiles.length - 1;
-    i >= 0;
-    i--
-  ) {
-    const projectile = projectiles[i];
-
-    projectile.progress +=
-      dt / 0.55;
-
-    const t = Math.min(
-      1,
-      projectile.progress
-    );
-
-    projectile.object.position.lerpVectors(
-      projectile.from,
-      projectile.to,
-      t
-    );
-
-    projectile.object.position.y +=
-      Math.sin(t * Math.PI) * 2.4;
-
-    if (t >= 1) {
-      burst(
-        projectile.to,
-        projectile.object.material.color.getHex(),
-        12,
-        2.8
-      );
-
-      scene.remove(
-        projectile.object
-      );
-
-      projectiles.splice(i, 1);
-    }
-  }
-}
-
-/* =====================================================
-   CAPTURE CREATURE
-   ===================================================== */
 
 function capture() {
-  if (!playing || cooldown > 0) {
+  if(!active || cooldown>0)return;
+
+  const unit=nearestCreature(20);
+
+  if(!unit){
+    notify("Approach a wild creature");
     return;
   }
 
-  if (party.length >= 5) {
-    toast(
-      "Party full — maximum 5 creatures"
+  if(party.length>=5){
+    notify("Party full (5 maximum)");
+    return;
+  }
+
+  if(!pay({orbs:1})){
+    notify("Craft more Capture Orbs with C");
+    return;
+  }
+
+  cooldown=.65;
+
+  const distance=unit.root.position.distanceTo(
+    player.position
+  );
+
+  const success=Math.random()<
+    (distance<8?.92:.7);
+
+  const endpoint=unit.root.position.clone();
+  endpoint.y+=1.5;
+
+  throwOrb(
+    player.position.clone().add(
+      new THREE.Vector3(0,1.8,0)
+    ),
+    endpoint,
+    success?0x87f0e1:0xab96ff
+  );
+
+  if(success){
+    party.push(unit.name);
+    scene.remove(unit.root);
+    wild.splice(wild.indexOf(unit),1);
+    selectCompanion(party.length-1);
+    notify(`Captured ${unit.name}!`);
+    burst(endpoint,0x9effdd,35);
+  }else{
+    unit.state="flee";
+    unit.timer=3;
+    unit.angle=Math.atan2(
+      unit.root.position.x-player.position.x,
+      unit.root.position.z-player.position.z
     );
+    notify(`${unit.name} escaped!`);
+  }
+
+  redrawParty();
+}
+
+function companionAttack(){
+  if(!active || cooldown>0)return;
+
+  if(!companion){
+    notify("Capture a companion first");
     return;
   }
 
-  const creature = nearestCreature();
+  const target=nearestCreature(15);
 
-  if (!creature) {
-    toast(
-      "Get closer to a wild creature"
+  if(!target){
+    notify("No enemy creature nearby");
+    return;
+  }
+
+  cooldown=.5;
+  target.hp-=35;
+
+  const endpoint=target.root.position.clone();
+  endpoint.y+=1.5;
+
+  throwOrb(
+    companion.root.position.clone().add(
+      new THREE.Vector3(0,1.7,0)
+    ),
+    endpoint,
+    companion.spec.color
+  );
+
+  target.state="flee";
+  target.timer=2.5;
+  target.angle=Math.atan2(
+    target.root.position.x-companion.root.position.x,
+    target.root.position.z-companion.root.position.z
+  );
+
+  if(target.hp<=0){
+    earn("crystal",2);
+    scene.remove(target.root);
+    wild.splice(wild.indexOf(target),1);
+    notify(`${companion.name} won! +2 crystals`);
+  }else{
+    notify(`${companion.name} used ${companion.spec.element} Burst!`);
+  }
+}
+
+function gatherOrAttack(){
+  if(!active || cooldown>0)return;
+
+  const target=nearestCreature(5);
+
+  if(target){
+    target.hp-=20;
+    target.state="flee";
+    target.timer=2;
+    target.angle=Math.atan2(
+      target.root.position.x-player.position.x,
+      target.root.position.z-player.position.z
     );
-    return;
-  }
 
-  if (!spend({ orbs: 1 })) {
-    toast(
-      "No capture orbs — craft more with C"
+    burst(
+      target.root.position.clone().add(
+        new THREE.Vector3(0,1.5,0)
+      ),
+      0xffba79
     );
+
+    cooldown=.3;
+
+    if(target.hp<=0){
+      earn("crystal",1);
+      scene.remove(target.root);
+      wild.splice(wild.indexOf(target),1);
+      notify(`Defeated ${target.name}`);
+    }else{
+      notify(`${target.name} hit!`);
+    }
     return;
   }
 
-  cooldown = 0.7;
+  let found=null;
+  let best=5.5;
 
-  const distance =
-    creature.root.position.distanceTo(
+  for(const object of resources){
+    const d=object.position.distanceTo(
       player.position
     );
 
-  const chance =
-    distance < 8 ? 0.92 : 0.70;
-
-  const success =
-    Math.random() < chance;
-
-  const target = creature.root.position
-    .clone()
-    .add(
-      new THREE.Vector3(
-        0,
-        1.4,
-        0
-      )
-    );
-
-  createProjectile(
-    player.position.clone().add(
-      new THREE.Vector3(
-        0,
-        1.7,
-        0
-      )
-    ),
-    target,
-    success ? 0x7beedc : 0xbd9bff
-  );
-
-  if (success) {
-    burst(
-      target,
-      0x9ef6dc,
-      38,
-      6
-    );
-
-    party.push(creature.name);
-
-    scene.remove(creature.root);
-
-    const index =
-      wild.indexOf(creature);
-
-    if (index >= 0) {
-      wild.splice(index, 1);
-    }
-
-    setBuddy(
-      party.length - 1
-    );
-
-    toast(
-      `Captured ${creature.name}!`
-    );
-
-  } else {
-
-    toast(
-      `${creature.name} escaped — try again!`
-    );
-  }
-}
-
-/* =====================================================
-   COMPANION ATTACK
-   ===================================================== */
-
-function commandCompanion() {
-  if (!buddy) {
-    toast(
-      "Capture a creature first"
-    );
-    return;
-  }
-
-  if (cooldown > 0) return;
-
-  const target =
-    nearestCreature(14);
-
-  if (!target) {
-    toast(
-      `${buddy.name} is following you`
-    );
-    return;
-  }
-
-  cooldown = 0.6;
-
-  target.hp -= 40;
-
-  createProjectile(
-    buddy.root.position.clone().add(
-      new THREE.Vector3(
-        0,
-        1.7,
-        0
-      )
-    ),
-
-    target.root.position.clone().add(
-      new THREE.Vector3(
-        0,
-        1.4,
-        0
-      )
-    ),
-
-    buddy.type.body
-  );
-
-  if (target.hp <= 0) {
-    burst(
-      target.root.position.clone().add(
-        new THREE.Vector3(
-          0,
-          1.3,
-          0
-        )
-      ),
-      buddy.type.body,
-      30,
-      5
-    );
-
-    scene.remove(target.root);
-
-    const index =
-      wild.indexOf(target);
-
-    if (index >= 0) {
-      wild.splice(index, 1);
-    }
-
-    add("crystal", 2);
-
-    toast(
-      `${buddy.name} defeated ${target.name}! +2 crystals`
-    );
-
-  } else {
-
-    toast(
-      `${buddy.name} used ${buddy.type.element} Burst!`
-    );
-  }
-}
-
-/* =====================================================
-   GATHER RESOURCES
-   ===================================================== */
-
-function gather() {
-  if (!playing || cooldown > 0) return;
-
-  let nearestResource = null;
-  let nearestDistance = 5;
-
-  for (const resource of resources) {
-    const distance =
-      player.position.distanceTo(
-        resource.group.position
-      );
-
-    if (distance < nearestDistance) {
-      nearestDistance = distance;
-      nearestResource = resource;
+    if(d<best){
+      best=d;
+      found=object;
     }
   }
 
-  if (!nearestResource) {
-    toast(
-      "Approach a tree, rock or berry bush"
-    );
+  if(!found){
+    notify("Move closer to trees, rocks or berries");
     return;
   }
 
-  const resource = nearestResource;
+  const {type,amount}=found.userData.resource;
 
-  add(
-    resource.type,
-    resource.amount
-  );
-
-  const color =
-    resource.type === "crystal"
-      ? 0x93ecff
-      : resource.type === "berries"
-        ? 0xf67f99
-        : 0xb6e9aa;
+  earn(type,amount);
 
   burst(
-    resource.group.position.clone().add(
-      new THREE.Vector3(
-        0,
-        1,
-        0
-      )
+    found.position.clone().add(
+      new THREE.Vector3(0,1,0)
     ),
-    color,
-    15,
-    3
+    0xb2f5bb
   );
 
-  scene.remove(resource.group);
+  scene.remove(found);
+  resources.splice(resources.indexOf(found),1);
+  cooldown=.3;
 
-  const index =
-    resources.indexOf(resource);
-
-  if (index >= 0) {
-    resources.splice(index, 1);
-  }
-
-  cooldown = 0.3;
-
-  toast(
-    `Collected ${resource.amount} ${resource.type}`
-  );
+  notify(`Collected ${amount} ${type}`);
 }
 
-/* =====================================================
-   BASE BUILDING
-   ===================================================== */
+/* ==================================================
+   CRAFTING AND CAMP BUILDING
+   ================================================== */
 
-const buildingCosts = {
-  hut: {
-    wood: 8,
-    stone: 5
+const recipes = {
+  orbs:{
+    label:"3 Capture Orbs",
+    cost:{stone:2,crystal:2},
+    item:"orbs",
+    amount:3
   },
-
-  bench: {
-    wood: 5,
-    stone: 3
-  },
-
-  shelter: {
-    wood: 5,
-    fiber: 3
+  meals:{
+    label:"2 Cooked Meals",
+    cost:{berries:3,wood:1},
+    item:"meals",
+    amount:2
   }
 };
 
-const buildings = [];
+const structures = {
+  hut:{
+    name:"Camp House",
+    cost:{wood:8,stone:5}
+  },
+  bench:{
+    name:"Workbench",
+    cost:{wood:5,stone:3}
+  },
+  shelter:{
+    name:"Creature Shelter",
+    cost:{wood:4,fiber:3}
+  }
+};
 
-function makeBuilding(type, x, z) {
-  const group = new THREE.Group();
+const buildings=[];
 
-  if (type === "hut") {
-    part(
-      group,
-      "box",
-      0xc0a280,
-      0, 1.6, 0,
-      5, 3.2, 4
+function makeBuilding(type,x,z){
+  const g=new THREE.Group();
+
+  if(type==="hut"){
+    mesh(
+      g,"box",0xbca586,
+      0,1.6,0,5,3.2,4
     );
 
-    const roof = part(
-      group,
-      "cone",
-      0x876147,
-      0, 3.95, 0,
-      3.9, 2.5, 3.9
+    const roof=mesh(
+      g,"cone",0x906d50,
+      0,3.9,0,3.8,2.6,3.8
+    );
+    roof.rotation.y=Math.PI/4;
+
+    mesh(
+      g,"box",0x624638,
+      0,.95,-2.05,1.1,1.9,.13
     );
 
-    roof.rotation.y =
-      Math.PI / 4;
-
-    part(
-      group,
-      "box",
-      0x684735,
-      0, 1, -2.03,
-      1.2, 2, 0.15
+    mesh(
+      g,"box",0x9bdcef,
+      -1.35,2,-2.08,.9,.8,.1
+    );
+  }else if(type==="bench"){
+    mesh(
+      g,"box",0x98744e,
+      0,1.2,0,2.2,.25,1.3
     );
 
-    part(
-      group,
-      "box",
-      0x9cdae9,
-      -1.35, 2, -2.1,
-      0.9, 1, 0.1
-    );
-
-  } else if (type === "bench") {
-
-    part(
-      group,
-      "box",
-      0x976e4c,
-      0, 1.2, 0,
-      2.2, 0.25, 1.3
-    );
-
-    for (const side of [-1, 1]) {
-      part(
-        group,
-        "box",
-        0x674a35,
-        side * 0.82,
-        0.58,
-        0,
-        0.19, 1.1, 0.2
+    for(const side of [-1,1]){
+      mesh(
+        g,"box",0x6b4b34,
+        side*.8,.62,0,.22,1.15,.22
       );
     }
-
-  } else if (type === "shelter") {
-
-    part(
-      group,
-      "box",
-      0x886b51,
-      0, 0.15, 0,
-      4, 0.3, 4
+  }else{
+    mesh(
+      g,"box",0x987653,
+      0,.17,0,4,.34,4
     );
 
-    for (const xOffset of [-1.7, 1.7]) {
-      for (const zOffset of [-1.7, 1.7]) {
-        part(
-          group,
-          "box",
-          0x806248,
-          xOffset,
-          1.4,
-          zOffset,
-          0.2, 2.5, 0.2
+    for(const x of [-1.7,1.7]){
+      for(const z of [-1.7,1.7]){
+        mesh(
+          g,"box",0x76543a,
+          x,1.45,z,.2,2.6,.2
         );
       }
     }
 
-    const roof = part(
-      group,
-      "cone",
-      0x66b590,
-      0, 3, 0,
-      3.2, 1.5, 3.2
+    const roof=mesh(
+      g,"cone",0x61b58c,
+      0,3.1,0,3.3,1.5,3.3
     );
-
-    roof.rotation.y =
-      Math.PI / 4;
+    roof.rotation.y=Math.PI/4;
   }
 
-  group.position.set(
-    x,
-    height(x, z),
-    z
-  );
-
-  scene.add(group);
-
-  buildings.push({
-    type,
-    x,
-    z
-  });
+  g.position.set(x,terrainY(x,z),z);
+  scene.add(g);
+  buildings.push({type,x,z});
 }
 
-const savedBuildings =
-  Array.isArray(saved.buildings)
-    ? saved.buildings
-    : [];
-
-for (const building of savedBuildings) {
-  if (
-    buildingCosts[building.type] &&
-    Number.isFinite(building.x) &&
-    Number.isFinite(building.z)
-  ) {
-    makeBuilding(
-      building.type,
-      building.x,
-      building.z
-    );
+for(const b of saved.buildings||[]){
+  if(
+    structures[b.type] &&
+    Number.isFinite(b.x) &&
+    Number.isFinite(b.z)
+  ){
+    makeBuilding(b.type,b.x,b.z);
   }
 }
 
-function build(type) {
-  const cost =
-    buildingCosts[type];
+function build(type){
+  const structure=structures[type];
 
-  if (!spend(cost)) {
-    toast(
-      "Not enough resources"
-    );
+  if(!structure || !pay(structure.cost)){
+    notify("Not enough building resources");
     return;
   }
 
-  const forward = lookDirection();
+  const look=lookVector();
 
-  const x =
-    THREE.MathUtils.clamp(
-      player.position.x +
-        forward.x * 8,
-      -WORLD + 5,
-      WORLD - 5
-    );
-
-  const z =
-    THREE.MathUtils.clamp(
-      player.position.z +
-        forward.z * 8,
-      -WORLD + 5,
-      WORLD - 5
-    );
-
-  makeBuilding(type, x, z);
-
-  closePanel();
-
-  toast(
-    `${type.toUpperCase()} built!`
+  const x=THREE.MathUtils.clamp(
+    player.position.x+look.x*8,
+    -SIZE+8,SIZE-8
   );
+
+  const z=THREE.MathUtils.clamp(
+    player.position.z+look.z*8,
+    -SIZE+8,SIZE-8
+  );
+
+  makeBuilding(type,x,z);
+  closeDialog();
+  notify(`${structure.name} built!`);
 }
 
-/* =====================================================
-   INVENTORY AND CRAFTING
-   ===================================================== */
+/* ==================================================
+   INVENTORY INTERFACE
+   ================================================== */
 
-function createEntry(
-  title,
-  description,
-  action = null,
-  disabled = false
-) {
-  const row =
-    document.createElement("div");
+function row(title,description,buttonText,action,disabled=false){
+  const div=document.createElement("div");
+  div.className="entry";
 
-  row.className = "entry";
+  const info=document.createElement("div");
+  info.className="text";
 
-  const info =
-    document.createElement("div");
+  const strong=document.createElement("strong");
+  strong.textContent=title;
 
-  const strong =
-    document.createElement("strong");
+  const small=document.createElement("small");
+  small.textContent=description;
 
-  strong.textContent = title;
+  info.append(strong,small);
+  div.append(info);
 
-  const small =
-    document.createElement("small");
-
-  small.textContent = description;
-
-  info.append(strong, small);
-  row.append(info);
-
-  if (action) {
-    const button =
-      document.createElement("button");
-
-    button.textContent = action[0];
-    button.onclick = action[1];
-    button.disabled = disabled;
-
-    row.append(button);
+  if(buttonText){
+    const button=document.createElement("button");
+    button.textContent=buttonText;
+    button.disabled=disabled;
+    button.onclick=action;
+    div.append(button);
   }
 
-  $("entries").append(row);
+  $("dialogRows").append(div);
 }
 
-function openPanel(mode) {
-  panel = mode;
+function showDialog(kind){
+  currentDialog=kind;
+  active=false;
+  paused=true;
 
-  $("panel").hidden = false;
-  $("menu").hidden = true;
+  $("dialog").hidden=false;
+  $("menu").hidden=true;
+  $("hud").hidden=false;
 
-  playing = false;
-
-  if (document.pointerLockElement) {
+  if(document.pointerLockElement){
     document.exitPointerLock();
   }
 
-  drawPanel();
+  for(const code of Object.keys(keys)){
+    keys[code]=false;
+  }
+
+  refreshDialog();
 }
 
-function closePanel() {
-  panel = "";
+function refreshDialog(){
+  $("dialogRows").replaceChildren();
 
-  $("panel").hidden = true;
+  $("dialogTitle").textContent={
+    inventory:"🎒 Inventory",
+    crafting:"🔨 Crafting",
+    building:"🏠 Building",
+    party:"🐾 Party"
+  }[currentDialog];
 
-  playing = true;
-
-  $("menu").hidden = true;
-  $("hud").hidden = false;
-
-  renderer.domElement
-    .requestPointerLock()
-    .catch(error => {
-      console.warn(
-        "Pointer lock unavailable:",
-        error
-      );
-    });
-}
-
-function drawPanel() {
-  $("entries").replaceChildren();
-
-  $("panelTitle").textContent = {
-    bag: "🎒 Inventory",
-    craft: "⚒ Crafting",
-    build: "⌂ Base Building",
-    party: "🐾 Companions"
-  }[panel] || "Inventory";
-
-  if (panel === "bag") {
-    for (
-      const [item, amount]
-      of Object.entries(bag)
-    ) {
-      createEntry(
-        item.toUpperCase(),
-        `${amount} available`
-      );
+  if(currentDialog==="inventory"){
+    for(const [name,count] of Object.entries(bag)){
+      row(name.toUpperCase(),`${count} available`);
     }
 
-    createEntry(
+    row(
       "CREATURE PARTY",
-      `${party.length}/5 captured`,
-      [
-        "OPEN",
-        () => openPanel("party")
-      ]
+      `${party.length}/5`,
+      "VIEW",
+      ()=>showDialog("party")
     );
   }
 
-  if (panel === "party") {
-    if (!party.length) {
-      createEntry(
-        "No companions yet",
-        "Capture creatures using Q"
-      );
-    }
+  if(currentDialog==="crafting"){
+    for(const recipe of Object.values(recipes)){
+      const cost=Object.entries(recipe.cost)
+        .map(([n,v])=>`${v} ${n}`).join(" + ");
 
-    party.forEach((name, index) => {
-      createEntry(
-        `${types[name].emoji} ${name}`,
-        types[name].element,
-        [
-          "FOLLOW",
-          () => {
-            setBuddy(index);
-            closePanel();
+      row(
+        recipe.label,cost,"CRAFT",
+        ()=>{
+          if(pay(recipe.cost)){
+            earn(recipe.item,recipe.amount);
+            notify(`Crafted ${recipe.label}`);
+            refreshDialog();
           }
-        ]
-      );
-    });
-  }
-
-  if (panel === "craft") {
-    const crafts = [
-      [
-        "3 Capture Orbs",
-        {
-          stone: 2,
-          crystal: 2
         },
-        "orbs",
-        3
-      ],
-
-      [
-        "2 Meals",
-        {
-          berries: 3,
-          wood: 1
-        },
-        "meals",
-        2
-      ]
-    ];
-
-    for (
-      const [title, cost, item, amount]
-      of crafts
-    ) {
-      const description =
-        Object.entries(cost)
-          .map(
-            ([name, number]) =>
-              `${number} ${name}`
-          )
-          .join(" + ");
-
-      createEntry(
-        title,
-        description,
-        [
-          "CRAFT",
-          () => {
-            if (spend(cost)) {
-              add(item, amount);
-
-              drawPanel();
-
-              toast(
-                `Crafted ${title}`
-              );
-            } else {
-              toast(
-                "Need more resources"
-              );
-            }
-          }
-        ],
-        !have(cost)
+        !canAfford(recipe.cost)
       );
     }
   }
 
-  if (panel === "build") {
-    for (
-      const [type, cost]
-      of Object.entries(buildingCosts)
-    ) {
-      const description =
-        Object.entries(cost)
-          .map(
-            ([name, number]) =>
-              `${number} ${name}`
-          )
-          .join(" + ");
+  if(currentDialog==="building"){
+    for(const [type,structure] of Object.entries(structures)){
+      const cost=Object.entries(structure.cost)
+        .map(([n,v])=>`${v} ${n}`).join(" + ");
 
-      createEntry(
-        type.toUpperCase(),
-        description,
-        [
-          "BUILD",
-          () => build(type)
-        ],
-        !have(cost)
+      row(
+        structure.name,cost,"BUILD",
+        ()=>build(type),
+        !canAfford(structure.cost)
+      );
+    }
+  }
+
+  if(currentDialog==="party"){
+    for(let i=0;i<party.length;i++){
+      const index=i;
+      row(
+        party[i],
+        species[party[i]]?.element||"",
+        "FOLLOW",
+        ()=>{
+          selectCompanion(index);
+          closeDialog();
+        }
       );
     }
   }
 }
 
-$("close").onclick = closePanel;
-
-/* =====================================================
-   FLYING
-   ===================================================== */
-
-function toggleFly() {
-  flying = !flying;
-
-  verticalVelocity = 0;
-
-  $("fly").textContent =
-    flying
-      ? "✈ FLY OFF"
-      : "✈ FLY ON";
-
-  $("fly").classList.toggle(
-    "active",
-    flying
-  );
-
-  toast(
-    flying
-      ? "Flying ON — Space UP · X DOWN"
-      : "Flying OFF"
-  );
+function closeDialog(){
+  currentDialog="";
+  $("dialog").hidden=true;
+  resumeGame();
 }
 
-/* =====================================================
-   SAVE GAME
-   ===================================================== */
+$("closeDialog").onclick=closeDialog;
 
-function saveGame(silent = false) {
-  try {
-    localStorage.setItem(
-      SAVE_KEY,
-      JSON.stringify({
-        bag,
-        party,
-        selected,
-        hp,
-        food,
-        day: worldTime,
-        pos: player.position.toArray(),
-        buildings
-      })
-    );
+/* ==================================================
+   START, PAUSE, RESUME
+   ================================================== */
 
-    if (!silent) {
-      toast("World saved!");
-    }
+function resumeGame(){
+  $("menu").hidden=true;
+  $("dialog").hidden=true;
+  $("hud").hidden=false;
 
-  } catch (error) {
+  active=true;
+  paused=false;
 
-    console.error(
-      "Save failed:",
-      error
-    );
-
-    if (!silent) {
-      toast(
-        "Unable to save world"
-      );
-    }
-  }
-}
-
-$("reset").onclick = () => {
-  const confirmed = confirm(
-    "Delete your saved Palfrontier world?"
-  );
-
-  if (!confirmed) return;
-
-  localStorage.removeItem(SAVE_KEY);
-  location.reload();
-};
-
-window.addEventListener(
-  "beforeunload",
-  () => saveGame(true)
-);
-
-/* =====================================================
-   CORRECTED START ADVENTURE
-   ===================================================== */
-
-let gameStarted = false;
-
-function startAdventure() {
-  // Start gameplay before requesting pointer lock.
-  gameStarted = true;
-  playing = true;
-  panel = "";
-
-  $("menu").hidden = true;
-  $("hud").hidden = false;
-  $("panel").hidden = true;
-
-  // Prevent a large frame jump after pressing START.
   clock.getDelta();
 
-  toast(
-    "Adventure started! WASD to move · Q to capture"
-  );
+  // The game starts even when pointer lock is unavailable.
+  if(document.pointerLockElement!==renderer.domElement){
+    try{
+      const result=renderer.domElement.requestPointerLock();
 
-  // Mouse lock is optional for the game to remain visible.
-  if (
-    document.pointerLockElement !==
-    renderer.domElement
-  ) {
-    try {
-      const request =
-        renderer.domElement.requestPointerLock();
-
-      if (request?.catch) {
-        request.catch(error => {
-          console.warn(
-            "Mouse pointer lock unavailable:",
-            error
-          );
-
-          playing = true;
-          $("menu").hidden = true;
-          $("hud").hidden = false;
+      if(result?.catch){
+        result.catch(error=>{
+          console.warn("Mouse lock unavailable:",error);
+          notify("Use right-click drag to look around");
         });
       }
-    } catch (error) {
-      console.warn(
-        "Pointer lock not supported:",
-        error
-      );
+    }catch(error){
+      console.warn(error);
     }
   }
 }
 
-// Use onclick rather than stacking multiple listeners.
-$("start").onclick = startAdventure;
+$("start").onclick=resumeGame;
 
-/* =====================================================
-   CORRECTED POINTER LOCK HANDLING
-   ===================================================== */
+function pauseGame(){
+  active=false;
+  paused=true;
 
-document.addEventListener(
-  "pointerlockchange",
-  () => {
-    const locked =
-      document.pointerLockElement ===
-      renderer.domElement;
+  $("menu").hidden=false;
+  $("hud").hidden=true;
 
-    if (locked) {
-      playing = true;
-      gameStarted = true;
+  for(const code of Object.keys(keys)){
+    keys[code]=false;
+  }
 
-      $("menu").hidden = true;
-      $("hud").hidden = false;
+  if(document.pointerLockElement){
+    document.exitPointerLock();
+  }
+}
 
-    } else if (panel) {
+document.addEventListener("pointerlockchange",()=>{
+  // Pointer lock controls camera convenience.
+  // Losing it does NOT automatically break or pause gameplay.
+  if(
+    document.pointerLockElement!==renderer.domElement &&
+    active
+  ){
+    notify("Mouse unlocked — hold right mouse button to look");
+  }
+});
 
-      // Don't show the main menu behind an open panel.
-      playing = false;
-      $("menu").hidden = true;
-      $("hud").hidden = false;
+/* ==================================================
+   KEYBOARD / MOUSE CONTROLS
+   ================================================== */
 
-    } else if (gameStarted) {
+document.addEventListener("keydown",e=>{
+  if(["Space","ArrowUp","ArrowDown"].includes(e.code)){
+    e.preventDefault();
+  }
 
-      // Esc releases mouse lock and pauses the game.
-      playing = false;
-
-      $("menu").hidden = false;
-      $("hud").hidden = true;
+  if(e.code==="Escape"){
+    if(currentDialog){
+      closeDialog();
+    }else if(active){
+      pauseGame();
     }
+    return;
+  }
 
-    if (!playing) {
-      for (const code of Object.keys(keys)) {
-        keys[code] = false;
-      }
+  if(!active)return;
+
+  keys[e.code]=true;
+
+  if(e.repeat)return;
+
+  if(e.code==="KeyQ")capture();
+  if(e.code==="KeyE")companionAttack();
+  if(e.code==="KeyI")showDialog("inventory");
+  if(e.code==="KeyC")showDialog("crafting");
+  if(e.code==="KeyB")showDialog("building");
+  if(e.code==="KeyP")saveGame();
+  if(e.code==="KeyF"){
+    flying=!flying;
+    verticalSpeed=0;
+    notify(flying?"Flying ON":"Flying OFF");
+  }
+  if(e.code==="KeyV"){
+    firstPerson=!firstPerson;
+    notify(firstPerson?"First-person view":"Third-person view");
+  }
+
+  if(e.code==="KeyR"){
+    if(pay({meals:1})){
+      hunger=Math.min(100,hunger+35);
+      health=Math.min(100,health+10);
+      notify("Ate a cooked meal");
+    }else if(pay({berries:2})){
+      hunger=Math.min(100,hunger+15);
+      notify("Ate berries");
+    }else{
+      notify("Gather berries or craft food");
     }
   }
-);
 
-/* =====================================================
-   MOUSE MOVEMENT
-   ===================================================== */
-
-document.addEventListener(
-  "mousemove",
-  event => {
-    if (!playing) return;
-
-    if (
-      document.pointerLockElement !==
-      renderer.domElement
-    ) {
-      return;
-    }
-
-    yaw -=
-      event.movementX * 0.0025;
-
-    pitch =
-      THREE.MathUtils.clamp(
-        pitch -
-          event.movementY * 0.0025,
-        -0.9,
-        1.05
-      );
+  if(/^Digit[1-5]$/.test(e.code)){
+    const index=Number(e.code.slice(-1))-1;
+    if(party[index])selectCompanion(index);
   }
-);
+});
 
-/* =====================================================
-   KEYBOARD CONTROLS
-   ===================================================== */
+document.addEventListener("keyup",e=>{
+  keys[e.code]=false;
+});
 
-document.addEventListener(
-  "keydown",
-  event => {
-    if (
-      ["Space", "ArrowUp", "ArrowDown"]
-        .includes(event.code)
-    ) {
-      event.preventDefault();
-    }
+document.addEventListener("mousemove",e=>{
+  if(!active)return;
 
-    if (
-      panel &&
-      event.code === "Escape"
-    ) {
-      closePanel();
-      return;
-    }
+  const locked=
+    document.pointerLockElement===renderer.domElement;
 
-    // Don't record movement while the menu is open.
-    if (!playing) return;
+  if(!locked && !rightDragging)return;
 
-    keys[event.code] = true;
+  yaw-=e.movementX*.0025;
+  pitch=THREE.MathUtils.clamp(
+    pitch-e.movementY*.0025,
+    -.85,1.05
+  );
+});
 
-    if (event.repeat) return;
+renderer.domElement.addEventListener("mousedown",e=>{
+  if(!active)return;
 
-    switch (event.code) {
-      case "KeyQ":
-        capture();
-        break;
-
-      case "KeyE":
-        commandCompanion();
-        break;
-
-      case "KeyI":
-        openPanel("bag");
-        break;
-
-      case "KeyC":
-        openPanel("craft");
-        break;
-
-      case "KeyB":
-        openPanel("build");
-        break;
-
-      case "KeyF":
-        toggleFly();
-        break;
-
-      case "KeyP":
-        saveGame();
-        break;
-
-      case "KeyV":
-        cameraView =
-          1 - cameraView;
-
-        toast(
-          cameraView
-            ? "First-person camera"
-            : "Third-person camera"
-        );
-        break;
-
-      case "KeyR":
-        if (spend({ meals: 1 })) {
-          food = Math.min(
-            100,
-            food + 35
-          );
-
-          hp = Math.min(
-            100,
-            hp + 12
-          );
-
-          toast("Ate a meal");
-
-        } else if (
-          spend({ berries: 2 })
-        ) {
-          food = Math.min(
-            100,
-            food + 15
-          );
-
-          toast("Ate berries");
-
-        } else {
-          toast("No food available");
-        }
-        break;
-    }
-
-    if (
-      /^Digit[1-5]$/.test(
-        event.code
-      )
-    ) {
-      const index =
-        Number(
-          event.code.slice(-1)
-        ) - 1;
-
-      if (party[index]) {
-        setBuddy(index);
-      }
-    }
+  if(e.button===2){
+    rightDragging=true;
   }
-);
 
-document.addEventListener(
-  "keyup",
-  event => {
-    keys[event.code] = false;
+  if(e.button===0){
+    gatherOrAttack();
   }
-);
+});
 
-/* =====================================================
-   MOUSE BUTTONS
-   ===================================================== */
-
-document.addEventListener(
-  "contextmenu",
-  event => {
-    event.preventDefault();
+document.addEventListener("mouseup",e=>{
+  if(e.button===2){
+    rightDragging=false;
   }
-);
+});
 
-document.addEventListener(
-  "mousedown",
-  event => {
-    if (
-      playing &&
-      event.button === 0 &&
-      event.target === renderer.domElement
-    ) {
-      gather();
-    }
+document.addEventListener("contextmenu",e=>{
+  e.preventDefault();
+});
+
+$("captureBtn").onclick=capture;
+$("attackBtn").onclick=companionAttack;
+$("bagBtn").onclick=()=>showDialog("inventory");
+$("craftBtn").onclick=()=>showDialog("crafting");
+$("buildBtn").onclick=()=>showDialog("building");
+$("flyBtn").onclick=()=>{
+  if(!active)return;
+  flying=!flying;
+  verticalSpeed=0;
+  notify(flying?"Flying ON":"Flying OFF");
+};
+
+/* ==================================================
+   SAVE SYSTEM
+   ================================================== */
+
+function saveGame(silent=false){
+  try{
+    localStorage.setItem(STORE,JSON.stringify({
+      bag,
+      party,
+      selected,
+      health,
+      hunger,
+      time,
+      pos:player.position.toArray(),
+      buildings
+    }));
+
+    if(!silent)notify("Game saved!");
+  }catch(error){
+    console.error("Save failed",error);
   }
-);
+}
 
-/* =====================================================
-   ACTION BUTTONS
-   ===================================================== */
-
-$("capture").onclick = () => {
-  if (playing) {
-    capture();
+$("reset").onclick=()=>{
+  if(confirm("Reset the entire game?")){
+    localStorage.removeItem(STORE);
+    location.reload();
   }
 };
 
-$("fly").onclick = () => {
-  if (playing) {
-    toggleFly();
-  }
-};
+window.addEventListener("beforeunload",()=>{
+  saveGame(true);
+});
 
-$("craft").onclick = () => {
-  openPanel("craft");
-};
+/* ==================================================
+   LIVE HUD
+   ================================================== */
 
-$("build").onclick = () => {
-  openPanel("build");
-};
+let hudTimer=0;
+let foodTimer=0;
+let fpsTimer=0;
+let frameCount=0;
+let saveTimer=0;
 
-/* =====================================================
-   GAME LOOP
-   ===================================================== */
+function updateHUD(){
+  $("health").textContent=Math.ceil(health);
+  $("hunger").textContent=Math.ceil(hunger);
+  $("orbs").textContent=get("orbs");
 
-const clock = new THREE.Clock();
-
-let fpsTimer = 0;
-let fpsFrames = 0;
-
-let hudTimer = 0;
-let hungerTimer = 0;
-let autoSaveTimer = 0;
-
-function animate() {
-  requestAnimationFrame(animate);
-
-  const dt = Math.min(
-    0.04,
-    clock.getDelta()
+  $("biome").textContent=biome(
+    player.position.x,player.position.z
   );
 
-  fpsTimer += dt;
-  fpsFrames++;
+  $("coordinates").textContent=
+    player.position.toArray()
+      .map(v=>Math.round(v)).join(", ");
 
-  if (fpsTimer >= 1) {
-    $("fps").textContent =
-      "FPS " +
-      Math.round(
-        fpsFrames / fpsTimer
-      );
+  const phase=(time%120)/120;
 
-    fpsFrames = 0;
-    fpsTimer = 0;
+  const period=
+    phase<.25?"Morning":
+    phase<.5?"Afternoon":
+    phase<.75?"Evening":"Night";
+
+  $("clock").textContent=
+    `Day ${Math.floor(time/120)+1} · ${period}`;
+
+  $("mode").textContent=flying
+    ?"✈ FLYING":"EXPLORING";
+
+  const target=aimedCreature();
+
+  $("target").textContent=target
+    ?`${target.name} · ${target.spec.element} · Q Capture`
+    :"";
+}
+
+/* ==================================================
+   MAIN RENDER LOOP
+   ================================================== */
+
+function animate(){
+  requestAnimationFrame(animate);
+
+  const dt=Math.min(clock.getDelta(),.04);
+
+  fpsTimer+=dt;
+  frameCount++;
+
+  if(fpsTimer>=1){
+    $("fps").textContent=
+      `FPS ${Math.round(frameCount/fpsTimer)}`;
+    frameCount=0;
+    fpsTimer=0;
   }
 
-  if (playing) {
-    worldTime += dt;
+  if(active){
+    time+=dt;
+    cooldown=Math.max(0,cooldown-dt);
 
-    updatePlayer(dt);
-    updateCreatures(dt);
+    updateMovement(dt);
+    updateCreatureAI(dt);
 
-    cooldown = Math.max(
-      0,
-      cooldown - dt
-    );
+    foodTimer+=dt;
+    saveTimer+=dt;
 
-    hungerTimer += dt;
-    autoSaveTimer += dt;
+    if(foodTimer>9){
+      foodTimer=0;
+      hunger=Math.max(0,hunger-1);
 
-    if (hungerTimer >= 9) {
-      hungerTimer = 0;
-
-      food = Math.max(
-        0,
-        food - 1
-      );
-
-      if (food <= 0) {
-        hp -= 2;
+      if(hunger===0){
+        health=Math.max(0,health-2);
       }
     }
 
-    if (hp <= 0) {
-      hp = 100;
-      food = 50;
-
+    if(health<=0){
+      health=100;
+      hunger=50;
       player.position.set(
-        0,
-        height(0, 0),
-        0
+        0,terrainY(0,0),0
       );
-
-      verticalVelocity = 0;
-
-      toast(
-        "Respawned at Emerald Meadow"
-      );
+      verticalSpeed=0;
+      notify("Respawned at Emerald Meadow");
     }
 
-    if (autoSaveTimer >= 45) {
-      autoSaveTimer = 0;
+    if(saveTimer>45){
+      saveTimer=0;
       saveGame(true);
     }
   }
 
-  updateCamera();
+  updateCamera(dt);
   updateEffects(dt);
-  updateProjectiles(dt);
 
-  /* DAY AND NIGHT */
+  const daylight=.5+.5*Math.cos(time*.046);
 
-  const brightness =
-    0.5 +
-    0.5 * Math.cos(
-      worldTime * 0.046
-    );
-
-  hemi.intensity =
-    0.65 +
-    brightness * 1.3;
-
-  sun.intensity =
-    0.3 +
-    brightness * 2;
+  ambient.intensity=.8+daylight*1.4;
+  sun.intensity=.3+daylight*2;
 
   scene.background.setRGB(
-    0.11 + brightness * 0.45,
-    0.16 + brightness * 0.64,
-    0.26 + brightness * 0.64
+    .10+daylight*.48,
+    .14+daylight*.64,
+    .25+daylight*.66
   );
 
-  /* HUD */
+  hudTimer+=dt;
 
-  hudTimer += dt;
-
-  if (hudTimer >= 0.14) {
-    hudTimer = 0;
-
-    $("hp").textContent =
-      Math.ceil(hp);
-
-    $("food").textContent =
-      Math.ceil(food);
-
-    $("orbCount").textContent =
-      bag.orbs || 0;
-
-    $("biome").textContent =
-      biome(
-        player.position.x,
-        player.position.z
-      );
-
-    $("coords").textContent =
-      "XYZ " +
-      player.position.toArray()
-        .map(value =>
-          Math.round(value)
-        )
-        .join(", ");
-
-    const phase =
-      (worldTime % 120) / 120;
-
-    const timeName =
-      phase < 0.25
-        ? "Morning"
-        : phase < 0.5
-          ? "Afternoon"
-          : phase < 0.75
-            ? "Evening"
-            : "Night";
-
-    $("clock").textContent =
-      `Day ${Math.floor(worldTime / 120) + 1} · ${timeName}`;
-
-    const target =
-      aimedCreature();
-
-    $("target").textContent =
-      target
-        ? `${target.name} · ${target.type.element} · Q Capture`
-        : "";
+  if(hudTimer>.16){
+    hudTimer=0;
+    updateHUD();
   }
 
-  /* NOTIFICATION TIMER */
-
-  if (toastTime > 0) {
-    toastTime -= dt;
-
-    if (toastTime <= 0) {
-      $("toast").textContent = "";
+  if(toastTimer>0){
+    toastTimer-=dt;
+    if(toastTimer<=0){
+      $("toast").textContent="";
     }
   }
 
-  renderer.render(
-    scene,
-    camera
-  );
+  renderer.render(scene,camera);
 }
 
-/* =====================================================
-   START RENDERING
-   ===================================================== */
+camera.position.set(0,7,10);
+camera.lookAt(player.position);
 
-updateCamera();
 animate();
 
-/* =====================================================
-   WINDOW RESIZE
-   ===================================================== */
+window.addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
 
-window.addEventListener(
-  "resize",
-  () => {
-    camera.aspect =
-      window.innerWidth /
-      window.innerHeight;
-
-    camera.updateProjectionMatrix();
-
-    renderer.setSize(
-      window.innerWidth,
-      window.innerHeight
-    );
-  }
-);
-
-console.log(
-  "GALAXY PALFRONTIER — Game initialized"
-);
+console.log("PALFRONTIER — 3D GAME INITIALIZED");
